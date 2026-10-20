@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 构建与打包产物
+*.zip
+dist/
+build/
+
+# 本地临时文件
+.tmp/
+*.tmp
+
+# 文档生成缓存
+.DS_Store
+.idea/
+.vscode/

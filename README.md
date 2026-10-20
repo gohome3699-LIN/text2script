@@ -1,0 +1,137 @@
+# 纯文转剧本单点工具（text2script） v1.0.0
+
+把**一句话创意 / 故事梗概 / 大纲 / 小说片段**单次转换为**短剧剧本 + 分镜表**的本地规则引擎。输入纯文本（`.txt` / `.md` / `.docx`），输出 Markdown 分集剧本与分镜表，或结构化 JSON。
+
+内部自动串联四段链路，无需分步调用：
+
+```
+输入解析（T06）→ 拆集与集末钩子（T07）→ 角色关系（T08）→ 分镜拆解（T11-T15：景别/运镜/转场/情绪/音调术语）
+```
+
+## 快速开始
+
+**环境：** Python 3.10+，仅标准库（读取 `.docx` 需额外安装 `python-docx`）。
+
+```bash
+# 方式一：直接传故事文本
+python text2script.py --text "外卖小哥获得读心术后，在送餐途中识破一场针对富豪的绑架阴谋"
+
+# 方式二：读取故事文件（.txt / .md / .docx）
+python text2script.py --file story.txt
+
+# 方式三：输出 JSON，便于程序继续处理
+python text2script.py --file story.txt --format json --output story.json
+```
+
+## 参数说明
+
+| 参数 | 说明 | 默认值 |
+| --- | --- | --- |
+| `--text` | 直接传入故事文本（一句话/梗概/大纲/片段） | 与 `--file` 二选一 |
+| `--file` | 读取故事文件（`.txt` / `.md` / `.docx`） | 与 `--text` 二选一 |
+| `--duration` | 单集目标时长（秒），范围 60–90 | 75 |
+| `--shots-per-minute` | 分镜密度（镜/分钟），范围 18–22 | 20 |
+| `--format` | 输出格式：`markdown` 或 `json` | `markdown` |
+| `--output` | 把结果写入文件；省略时输出到 stdout | 无 |
+
+**输出约定：** stdout 只输出内容（Markdown / JSON），可直接管道解析；信息行（输入类型、集数、长文本分段提示、红线命中、生成提示、自检结果）一律走 stderr。
+
+## 错误处理（T18）
+
+| 场景 | 行为 |
+| --- | --- |
+| 未提供 `--text/--file` | 打印用法并退出 |
+| `--text` / 文件内容为空 | 提示「输入为空，请提供至少一段故事文本」并退出 |
+| 文件不存在 / 读取失败 | 提示具体路径或错误，不产出空文档 |
+| 长文本超过约 2000 字 | 自动按段切分，stderr 提示分段数，逐段拆集 |
+| 命中红线类别（暴力/擦边等） | stderr 输出红线提示，要求人工复核后继续 |
+| 分镜枚举/时长不自检通过 | stderr 输出具体问题列表 |
+
+`.docx` 读取依赖 `python-docx`：`python -m pip install python-docx`。
+
+## 输出内容
+
+**Markdown（默认）：** 分集剧本 + 分镜表。每集包含核心冲突、集末钩子（含钩子类型）、分镜表（镜号/景别/运镜/运镜术语/画面内容/台词/角色/情绪/表情/音调/时长/转场）。
+
+**JSON（`--format json`）：** 顶层结构：
+
+```json
+{
+  "input_type": "one_line | summary | outline | excerpt",
+  "input_type_label": "一句话创意 | 故事梗概 | 大纲/分卷 | 小说片段",
+  "needs_expansion": true,
+  "sensitive_hits": [],
+  "warnings": [],
+  "episodes": [
+    {
+      "episode": 1,
+      "target_duration": 75,
+      "core_conflict": "",
+      "episode_hook": "",
+      "hook_type": "",
+      "scenes": [],
+      "characters": [],
+      "lines": [],
+      "shots": [],
+      "continuity": [],
+      "warnings": [],
+      "source_text": "",
+      "relations": []
+    }
+  ]
+}
+```
+
+## 目录结构
+
+```
+text2script/
+├── text2script.py          ← 唯一入口（工作流编排 + 错误处理）
+├── input_parser.py         ← T06 输入解析：清洗/类型识别/长文本分段/敏感词
+├── episode_splitter.py     ← T07 拆集与钩子：分集/集末钩子/冲突句/台词说话人归属
+├── character_relations.py  ← T08 角色关系：出场人物/关系矩阵
+├── storyboard.py           ← T11-T15 分镜拆解：镜头/景别/运镜/转场/情绪术语
+├── example*.py             ← 各模块独立示例
+├── examples/               ← 端到端示例（输入 + 输出，3 组）
+├── trials/                 ← T20-T23 真实素材试跑与质量/合规自查记录（10 素材）
+├── SKILL.md                ← Skill 封装元数据与触发/执行说明
+├── LICENSE                 ← MIT License
+├── .gitignore              ← 排除 __pycache__ 与打包产物
+└── README.md               ← 本文件
+```
+
+## 与周边能力的边界
+
+- **只做文本 → 剧本/分镜**：不生成视频、图片、音频、角色设定图。
+- **本地规则引擎**：不联网、不调用外部 AI 服务，仅 Python 标准库。
+- **枚举硬约束**：景别、运镜、情绪、钩子类型、场景时段等枚举在 `storyboard.py` 内定义，不随输入新增。
+- **简中输出**：全部内容与提示使用简体中文。
+
+## 示例
+
+`examples/` 下提供 3 组端到端示例（输入 → 输出）：
+
+| 示例 | 输入类型 | 输入文件 | 输出文件 |
+| --- | --- | --- | --- |
+| 1 | 一句话创意 | `input-1-one-line.txt` | `output-1-one-line.md` |
+| 2 | 故事梗概 | `input-2-synopsis.txt` | `output-2-synopsis.md` |
+| 3 | 大纲/分卷（3 集） | `input-3-outline.txt` | `output-3-outline.md` |
+
+## 测试
+
+```bash
+python -m unittest discover -s . -p "test_*.py" -v
+```
+
+覆盖：输入解析、拆集、角色关系、分镜拆解、端到端入口（`test_skill.py`），共 **161 项**。
+真实素材试跑与质量/合规自查记录见 `trials/`（10 个贴近真实短剧/小说场景的素材，
+覆盖四种输入类型与红线提示链路，验收指标：拆集成功率 10/10、钩子非空率 100%、
+分镜核心字段完整率 100%、红线 7 类全内置命中）。
+
+## 开源与许可
+
+本项目以 **MIT License** 开源（见 [LICENSE](LICENSE)），可自由用于学习、商业与二次开发，仅需保留版权与许可声明。
+
+- **版本：** v1.0.0（`python text2script.py --version`）
+- **贡献：** 欢迎提交 Issue / PR；功能边界与枚举硬约束见「与周边能力的边界」。
+- **免责声明：** 工具为本地规则引擎，不保证生成内容完全可用；命中红线类别的输出需人工复核后使用。
