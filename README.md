@@ -94,6 +94,7 @@ text2script/
 ├── example*.py             ← 各模块独立示例
 ├── examples/               ← 端到端示例（输入 + 输出，3 组）
 ├── trials/                 ← T20-T23 真实素材试跑与质量/合规自查记录（10 素材）
+├── docs/                   ← 发布指引、使用教程、B站/抖音 视频脚本（T24/T25）
 ├── SKILL.md                ← Skill 封装元数据与触发/执行说明
 ├── LICENSE                 ← MIT License
 ├── .gitignore              ← 排除 __pycache__ 与打包产物
