@@ -94,7 +94,7 @@ text2script/
 ├── example*.py             ← 各模块独立示例
 ├── examples/               ← 端到端示例（输入 + 输出，3 组）
 ├── trials/                 ← T20-T23 真实素材试跑与质量/合规自查记录（10 素材）
-├── docs/                   ← 发布指引、使用教程、B站/抖音 视频脚本（T24/T25）
+├── docs/                   ← 发布/教程/市集上架材料/赞助指引/复盘模板（T24-T28）
 ├── SKILL.md                ← Skill 封装元数据与触发/执行说明
 ├── LICENSE                 ← MIT License
 ├── .gitignore              ← 排除 __pycache__ 与打包产物
@@ -136,3 +136,13 @@ python -m unittest discover -s . -p "test_*.py" -v
 - **版本：** v1.0.0（`python text2script.py --version`）
 - **贡献：** 欢迎提交 Issue / PR；功能边界与枚举硬约束见「与周边能力的边界」。
 - **免责声明：** 工具为本地规则引擎，不保证生成内容完全可用；命中红线类别的输出需人工复核后使用。
+
+## 赞助与支持
+
+如果 text2script 帮到了你，欢迎请我们喝杯咖啡，支持持续维护与进阶功能（分镜拆解、提示词工厂、角色一致性）：
+
+- [爱发电](https://afdian.com/a/<你的uid>)（国内推荐，支持月费会员）
+- [GitHub Sponsors](https://github.com/sponsors/<你的用户名>)（开源赞助）
+- [Patreon](https://www.patreon.com/<你的创作者名>)（海外订阅，可选）
+
+> 配置与验证方法见 [docs/sponsor-guide.md](docs/sponsor-guide.md)。目前为占位链接，待各渠道开通后替换为真实地址。
