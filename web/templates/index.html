@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="纯文转剧本分镜：上传 .docx/.txt/.md 或直接粘贴文本，一键生成可直接使用的纯文字档分镜稿">
+  <title></title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="lang-switch" id="lang-switch" role="group" aria-label="Language">
+        <button type="button" class="lang-btn" data-lang="zh-CN" aria-label="简体中文">简</button>
+        <button type="button" class="lang-btn" data-lang="zh-TW" aria-label="繁體中文">繁</button>
+        <button type="button" class="lang-btn" data-lang="en" aria-label="English">EN</button>
+      </div>
+      <h1 data-i18n="appTitle">纯文转剧本分镜</h1>
+      <p class="sub" data-i18n="appSub">上传 .docx / .txt / .md，或直接粘贴 / 打字，一键生成纯文字档分镜稿</p>
+    </header>
+
+    <section class="card input-card">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="file" role="tab" aria-selected="true" data-i18n="tabUpload">上传文件</button>
+        <button type="button" class="tab" data-tab="text" role="tab" aria-selected="false" data-i18n="tabText">粘贴 / 打字</button>
+      </div>
+
+      <div class="tab-panel" data-panel="file">
+        <label class="dropzone" id="dropzone" for="file-input">
+          <input type="file" id="file-input" accept=".txt,.md,.docx" hidden>
+          <svg class="dz-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M14 2v6h6M12 11v6m-3-3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="dz-main" data-i18n="dzMain">点击选择文件，或拖拽到此处</p>
+          <p class="dz-sub" data-i18n="dzSub">支持 .docx / .txt / .md，最大 10MB</p>
+          <p class="dz-file" id="file-name"></p>
+        </label>
+        <p class="hint" data-i18n="hint">提示：上传后点到「转换」即可，文件内容不会被保存到服务器。</p>
+      </div>
+
+      <div class="tab-panel" data-panel="text" hidden>
+        <textarea
+          id="story-text"
+          rows="8"
+          maxlength="50000"
+          data-i18n-placeholder="textPlaceholder"
+          placeholder="在这里粘贴或输入你的故事：一句话创意、故事梗概、大纲、小说片段都可以。&#10;&#10;例如：外卖小哥获得读心术，在送餐途中一次次救下陌生人，却发现自己也被卷入更大的阴谋……"
+        ></textarea>
+        <div class="counter"><span id="char-count">0</span> / 50000 <span data-i18n="charSuffix">字</span></div>
+      </div>
+
+      <button type="button" class="btn primary" id="convert-btn">
+        <span class="btn-label" data-i18n="convert">转 换</span>
+        <span class="btn-loading" data-i18n="converting" hidden>转换中…</span>
+      </button>
+      <p class="error" id="error-box" role="alert" hidden></p>
+    </section>
+
+    <section class="card result-card" id="result-card" hidden>
+      <div class="result-head">
+        <h2 data-i18n="resultTitle">分镜稿</h2>
+        <div class="result-actions">
+          <button type="button" class="btn ghost" id="copy-btn" data-i18n="copy">复制</button>
+          <button type="button" class="btn ghost" id="download-btn" data-i18n="download">下载 .txt</button>
+        </div>
+      </div>
+      <div class="meta" id="meta"></div>
+      <pre class="result-body" id="result-body"></pre>
+      <p class="ai-notice" data-i18n="aiNotice">本内容由 AI 生成，仅供参考</p>
+    </section>
+
+    <footer class="foot" data-i18n="footer">纯文转剧本分镜 · 网页版</footer>
+  </main>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
