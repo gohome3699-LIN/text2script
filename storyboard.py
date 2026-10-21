@@ -735,6 +735,61 @@ def build_storyboard_plan(
 # ------------------- 渲染 -------------------
 
 
+def _dialog_plain(dialogue: Optional[str]) -> str:
+    """把「【角色】"内容"」转为「角色："内容"」，去掉多余括号符号。"""
+    if not dialogue:
+        return ""
+    s = dialogue.strip()
+    m = re.match(r"^【([^】]+)】\s*([\u201c\"].*?[\u201d\"])$", s)
+    if m:
+        return f"{m.group(1)}：{m.group(2)}"
+    return s
+
+
+def render_storyboard_text(
+    plan: es.EpisodePlan, break_by_shot: bool = False
+) -> str:
+    """输出纯文本分镜稿（.txt，减少不必要的标点符号）。
+
+    这是「可直接粘贴 AI 动漫工具」的文字档格式：
+    - 不使用 Markdown 表格竖线 / 圆点分隔线等装饰符号；
+    - 每镜一行核心信息，台词转成「角色：内容」而不是【角色】加引号包裹；
+    - break_by_shot=True（输入超过 800 字）时按「分镜节点」分段落：
+      每个分镜块之间空行分隔，便于阅读与逐镜粘贴；≤800 字时紧凑连排；
+    - 台词为空时省略台词行，转场为空时省略转场行；
+    - 首行为输入类型说明，命中红线时保留警示行。
+    """
+    out: List[str] = []
+    out.append(f"剧本分镜稿（输入类型：{plan.input_type_label}）")
+    if plan.sensitive_hits:
+        out.append(f"注意：命中红线类别 {'、'.join(plan.sensitive_hits)}，请人工确认后继续")
+
+    for ep in plan.episodes:
+        out.append("")
+        out.append(f"第 {ep.episode} 集｜目标时长 {ep.target_duration} 秒")
+        out.append(f"核心冲突：{ep.core_conflict}")
+        out.append(f"集末钩子：{ep.episode_hook}")
+        shots: List[StoryboardShot] = ep.shots  # type: ignore[assignment]
+        for s in shots:
+            block = [f"镜{s.shot}｜{s.shot_size}·{s.camera_note}（{s.duration}秒）"]
+            block.append(f"画面：{s.visual}")
+            if s.dialogue:
+                block.append(f"台词：{_dialog_plain(s.dialogue)}")
+            block.append(f"情绪：{s.emotion}")
+            block.append(f"表情：{s.expression}")
+            block.append(f"音调：{s.tone}")
+            if s.transition:
+                block.append(f"转场：{s.transition}")
+            if break_by_shot:
+                out.append("")
+            out.extend(block)
+        out.append("")
+
+    while out and out[-1] == "":
+        out.pop()
+    return "\n".join(out).strip()
+
+
 def render_storyboard_markdown(plan: es.EpisodePlan) -> str:
     """输出含运镜术语与转场列的分镜表（Markdown）。"""
     out: List[str] = []

@@ -5,28 +5,34 @@
 T11-T15 分镜拆解。
 
 用法（在 text2script/ 目录下）：
-    python text2script.py --text "一句话创意：外卖小哥获得读心术"
-    python text2script.py --file story.txt
-    python text2script.py --file story.docx --format json
-    python text2script.py --file story.txt --output out.md
-    python text2script.py --duration 60 --shots-per-minute 18 --file story.txt
-    python text2script.py --version
+        python text2script.py --text "一句话创意：外卖小哥获得读心术"
+        python text2script.py --file story.txt
+        python text2script.py --file story.docx --format json
+        python text2script.py --file story.txt --output out.md
+        python text2script.py --text "粘贴或打字的任意故事" --format text --output out.txt
+        python text2script.py --duration 60 --shots-per-minute 18 --file story.txt
+        python text2script.py --version
 
-参数：
-    --text                直接传入故事文本（一句话/梗概/大纲/小说片段）
-    --file                读取故事文件（.txt / .md / .docx）
-    --duration            集目标时长，60--90 秒（默认 75）
-    --shots-per-minute    分镜密度 18--22 镜/分钟（默认 20）
-    --format markdown|json
-                          输出格式（默认 markdown）
-    --output <path>       把结果写入文件；省略时输出到 stdout
-    --version             打印版本号
+    参数：
+        --text                直接粘贴或打字传入故事文本（一句话/梗概/大纲/小说片段）
+        --file                上传读取故事文件（.txt / .md / .docx）
+        --duration            集目标时长，60--90 秒（默认 75）
+        --shots-per-minute    分镜密度 18--22 镜/分钟（默认 20）
+        --format markdown|json|text
+                              输出格式（默认 markdown；text 为纯文字档，可直接粘贴）
+        --output <path>       把结果写入文件；省略时输出到 stdout
+        --version             打印版本号
 
-stdout 只输出内容（markdown / json），信息行走 stderr，便于管道解析。
-.docx 需要 python-docx：python -m pip install python-docx。
-"""
+    text 格式规则：
+        - 纯文字档 / .txt，无表格装饰符号，减少不必要的标点
+        - 超过 800 字时按「分镜节点」分段落（每个分镜一段，空行分隔）
+        - ≤800 字紧凑连排，方便直接阅读
 
-__version__ = "1.0.0"
+    stdout 只输出内容（markdown / json / text），信息行走 stderr，便于管道解析。
+    .docx 需要 python-docx：python -m pip install python-docx。
+    """
+
+__version__ = "1.1.0"
 
 import argparse
 import os
@@ -58,14 +64,14 @@ def main() -> None:
     )
     parser.add_argument("--version", action="version",
                         version=f"text2script {__version__}")
-    parser.add_argument("--text", help="直接传入故事文本（一句话/梗概/大纲/小说片段）")
+    parser.add_argument("--text", help="直接粘贴或打字传入故事文本（一句话/梗概/大纲/小说片段）")
     parser.add_argument("--file", help="读取故事文件（.txt / .md / .docx）")
     parser.add_argument("--duration", type=int, default=es.DEFAULT_TARGET_DURATION,
                         help="集目标时长，60--90 秒（默认 75）")
     parser.add_argument("--shots-per-minute", type=int, default=es.SHOTS_PER_MINUTE,
                         help="分镜密度 18--22 镜/分钟（默认 20）")
-    parser.add_argument("--format", choices=["markdown", "json"], default="markdown",
-                        help="输出格式（默认 markdown）")
+    parser.add_argument("--format", choices=["markdown", "json", "text"], default="markdown",
+                        help="输出格式：markdown（默认）/ json / text（纯文字档 .txt）")
     parser.add_argument("--output", metavar="PATH",
                         help="把结果写入文件；省略时输出到 stdout")
     args = parser.parse_args()
@@ -122,8 +128,19 @@ def main() -> None:
         print("分镜自检通过：字段完整、枚举合法、密度/时长达标、转场不乱用",
               file=sys.stderr)
 
-    content = sb.render_storyboard_json(plan) if args.format == "json" \
-        else sb.render_storyboard_markdown(plan)
+    if args.format == "json":
+        content = sb.render_storyboard_json(plan)
+    elif args.format == "text":
+        # 超过 800 字：按分镜节点分段落（每个分镜一段，空行分隔）
+        break_by_shot = parse.cleaned_length > 800
+        content = sb.render_storyboard_text(plan, break_by_shot=break_by_shot)
+        print(
+            f"纯文字档输出：{parse.cleaned_length} 字"
+            + ("，超过 800 字已按分镜节点分段落" if break_by_shot else "，紧凑连排"),
+            file=sys.stderr,
+        )
+    else:
+        content = sb.render_storyboard_markdown(plan)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as fh:
             fh.write(content + "\n")

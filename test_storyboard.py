@@ -27,6 +27,7 @@ from storyboard import (
     build_storyboard_plan,
     render_storyboard_json,
     render_storyboard_markdown,
+    render_storyboard_text,
     validate_storyboard,
 )
 
@@ -267,6 +268,28 @@ class TestJsonMarkdown(unittest.TestCase):
         self.assertIn("景别", md)
         self.assertIn("运镜术语", md)
         self.assertIn("转场", md)
+
+    def test_text_render_is_plain_no_table_symbols(self):
+        """纯文字档：无 Markdown 表格装饰符号，台词为「角色：内容」。"""
+        txt = render_storyboard_text(self._plan())
+        self.assertIn("剧本分镜稿", txt)
+        self.assertIn("镜1", txt)
+        self.assertNotIn("| 镜号", txt)
+        self.assertNotIn("| --", txt)
+        # 台词转成「角色：内容」，而不是【角色】加引号包裹
+        self.assertNotIn("【", txt)
+
+    def test_text_render_break_by_shot_paragraph(self):
+        """超过 800 字（break_by_shot=True）时每镜分段落，有空行分隔。"""
+        txt = render_storyboard_text(self._plan(), break_by_shot=True)
+        self.assertIn("镜1", txt)
+        self.assertIn("\n\n镜2", txt)
+
+    def test_text_render_compact_no_extra_blank_lines(self):
+        """≤800 字（break_by_shot=False）时紧凑连排，不产生镜间空行。"""
+        txt = render_storyboard_text(self._plan(), break_by_shot=False)
+        self.assertIn("镜1", txt)
+        self.assertNotIn("\n\n镜2", txt)
 
     def _plan(self):
         return build_storyboard_plan(ONE_LINER, target_duration=60)

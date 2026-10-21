@@ -120,6 +120,28 @@ class TestWorkflow(unittest.TestCase):
                     "dialogue", "emotion", "transition"):
             self.assertIn(key, shot)
 
+    def test_text_mode_plain_stdout_clean(self):
+        """--format text：stdout 是纯文字档，无表格装饰、信息行走 stderr。"""
+        proc = run_entry("--text", ONE_LINER, "--format", "text")
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("剧本分镜稿", proc.stdout)
+        self.assertIn("镜1", proc.stdout)
+        self.assertNotIn("| 镜号", proc.stdout)
+        self.assertNotIn("输入类型:", proc.stdout)
+        self.assertIn("输入类型:", proc.stderr)
+        self.assertIn("纯文字档输出", proc.stderr)
+
+    def test_long_text_over_800_breaks_by_shot(self):
+        """超过 800 字：text 输出按分镜节点分段落，并在 stderr 提示。"""
+        long_text = "县城清晨，陈默骑着电动车穿过早市，撞见一场碰瓷闹剧。" * 40
+        self.assertGreater(len(long_text), 800)
+        proc = run_entry("--text", long_text, "--format", "text")
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("超过 800 字", proc.stderr)
+        # 输出里镜2与镜3之间应有空行分段
+        self.assertIn("镜2", proc.stdout)
+        self.assertIn("\n\n镜2", proc.stdout)
+
     def test_file_mode_txt(self):
         path = os.path.join(HERE, "examples", "input-2-synopsis.txt")
         proc = run_entry("--file", path, "--format", "json")

@@ -1,6 +1,6 @@
-# 纯文转剧本单点工具（text2script） v1.0.0
+# 纯文转剧本单点工具（text2script） v1.1.0
 
-把**一句话创意 / 故事梗概 / 大纲 / 小说片段**单次转换为**短剧剧本 + 分镜表**的本地规则引擎。输入纯文本（`.txt` / `.md` / `.docx`），输出 Markdown 分集剧本与分镜表，或结构化 JSON。
+把**一句话创意 / 故事梗概 / 大纲 / 小说片段**单次转换为**短剧剧本 + 分镜表**的本地规则引擎。支持**上传文件（`.txt` / `.md` / `.docx`）**或**直接粘贴/打字输入故事文字**，输出 Markdown 分集剧本与分镜表、结构化 JSON，或**纯文字档 .txt（可直接粘贴 AI 动漫工具）**。
 
 内部自动串联四段链路，无需分步调用：
 
@@ -13,28 +13,51 @@
 **环境：** Python 3.10+，仅标准库（读取 `.docx` 需额外安装 `python-docx`）。
 
 ```bash
-# 方式一：直接传故事文本
+# 方式一：直接粘贴 / 打字输入故事文本
 python text2script.py --text "外卖小哥获得读心术后，在送餐途中识破一场针对富豪的绑架阴谋"
 
-# 方式二：读取故事文件（.txt / .md / .docx）
+# 方式二：上传读取故事文件（.txt / .md / .docx）
 python text2script.py --file story.txt
 
 # 方式三：输出 JSON，便于程序继续处理
 python text2script.py --file story.txt --format json --output story.json
+
+# 方式四：输出纯文字档 .txt（可直接粘贴 AI 动漫工具）
+python text2script.py --file story.txt --format text --output story.txt
 ```
+
+### 网页版
+
+工程附带一个轻量 Flask 网页版（`web/`），支持**上传文件 / 拖拽 / 直接粘贴输入**，并一键复制或下载纯文字档 .txt：
+
+```bash
+# 安装依赖（仅网页版需要）
+python -m pip install -r web/requirements.txt
+
+# 启动（默认 http://127.0.0.1:5000）
+python web/app.py
+```
+
+**界面语言（三语）：** 页面顶部提供「简 / 繁 / EN」切换器，可随时切换**简体中文、繁体中文、英文**界面；首次访问按浏览器语言自动选择，手动选择会保存在本机（localStorage），刷新后保持。切换语言只改变界面文案（标题、按钮、提示、状态标签等），**输入文本与生成的分镜稿内容不会被翻译或改写**。
 
 ## 参数说明
 
 | 参数 | 说明 | 默认值 |
 | --- | --- | --- |
-| `--text` | 直接传入故事文本（一句话/梗概/大纲/片段） | 与 `--file` 二选一 |
-| `--file` | 读取故事文件（`.txt` / `.md` / `.docx`） | 与 `--text` 二选一 |
+| `--text` | 直接粘贴/打字传入故事文本（一句话/梗概/大纲/片段） | 与 `--file` 二选一 |
+| `--file` | 上传读取故事文件（`.txt` / `.md` / `.docx`） | 与 `--text` 二选一 |
 | `--duration` | 单集目标时长（秒），范围 60–90 | 75 |
 | `--shots-per-minute` | 分镜密度（镜/分钟），范围 18–22 | 20 |
-| `--format` | 输出格式：`markdown` 或 `json` | `markdown` |
+| `--format` | 输出格式：`markdown` / `json` / `text` | `markdown` |
 | `--output` | 把结果写入文件；省略时输出到 stdout | 无 |
 
-**输出约定：** stdout 只输出内容（Markdown / JSON），可直接管道解析；信息行（输入类型、集数、长文本分段提示、红线命中、生成提示、自检结果）一律走 stderr。
+**输出约定：** stdout 只输出内容（Markdown / JSON / text），可直接管道解析；信息行（输入类型、集数、长文本分段提示、红线命中、生成提示、自检结果、text 分段提示）一律走 stderr。
+
+### 纯文字档（--format text）规则
+
+- 输出为 **纯文字档 / .txt**，无 Markdown 表格装饰符号，**减少不必要的标点符号**（台词转成「角色：内容」格式）
+- **输入超过 800 字时自动按分镜节点分段落**：每个分镜一段，段间空行，方便 AI 动漫工具逐镜粘贴
+- 输入 ≤800 字时紧凑连排，便于直接阅读
 
 ## 错误处理（T18）
 
@@ -52,6 +75,8 @@ python text2script.py --file story.txt --format json --output story.json
 ## 输出内容
 
 **Markdown（默认）：** 分集剧本 + 分镜表。每集包含核心冲突、集末钩子（含钩子类型）、分镜表（镜号/景别/运镜/运镜术语/画面内容/台词/角色/情绪/表情/音调/时长/转场）。
+
+**纯文字档（`--format text`）：** 可直接粘贴 AI 动漫工具的分镜稿，每条分镜包含镜号/景别/运镜/画面/台词/情绪/表情/音调/转场，无表格装饰符号；超过 800 字按分镜节点分段落。
 
 **JSON（`--format json`）：** 顶层结构：
 
@@ -95,6 +120,13 @@ text2script/
 ├── examples/               ← 端到端示例（输入 + 输出，3 组）
 ├── trials/                 ← T20-T23 真实素材试跑与质量/合规自查记录（10 素材）
 ├── docs/                   ← 发布/教程/市集上架材料/赞助指引/复盘模板（T24-T28）
+├── web/                    ← 网页版（Flask）：上传/粘贴输入、三语界面、复制/下载 .txt
+│   ├── app.py              ← Flask 应用（路由 / 与 /convert，50,000 字上限，10MB 文件上限）
+│   ├── requirements.txt    ← flask、python-docx
+│   ├── templates/index.html
+│   ├── static/style.css
+│   ├── static/app.js       ← 前端逻辑 + i18n 字典（简体/繁体/英文）
+│   └── test_webapp.py      ← 网页版自测（11 项）
 ├── SKILL.md                ← Skill 封装元数据与触发/执行说明
 ├── LICENSE                 ← MIT License
 ├── .gitignore              ← 排除 __pycache__ 与打包产物
@@ -104,9 +136,9 @@ text2script/
 ## 与周边能力的边界
 
 - **只做文本 → 剧本/分镜**：不生成视频、图片、音频、角色设定图。
-- **本地规则引擎**：不联网、不调用外部 AI 服务，仅 Python 标准库。
+- **本地规则引擎**：不联网、不调用外部 AI 服务，仅 Python 标准库（网页版需 Flask；`.docx` 读取需 `python-docx`）。
 - **枚举硬约束**：景别、运镜、情绪、钩子类型、场景时段等枚举在 `storyboard.py` 内定义，不随输入新增。
-- **简中输出**：全部内容与提示使用简体中文。
+- **简中输出**：命令行与网页版生成的剧本/分镜内容使用简体中文；网页版**界面**支持简体/繁体/英文切换，但不会翻译用户输入或生成内容。
 
 ## 示例
 
@@ -124,7 +156,9 @@ text2script/
 python -m unittest discover -s . -p "test_*.py" -v
 ```
 
-覆盖：输入解析、拆集、角色关系、分镜拆解、端到端入口（`test_skill.py`），共 **161 项**。
+覆盖：输入解析、拆集、角色关系、分镜拆解、端到端入口（`test_skill.py`），共 **166 项**。
+网页版自测（`web/test_webapp.py`）另有 **11 项**：首页渲染、.txt/.md/.docx 上传、粘贴输入、
+800 字分段、错误兜底、超大文件 413 等。
 真实素材试跑与质量/合规自查记录见 `trials/`（10 个贴近真实短剧/小说场景的素材，
 覆盖四种输入类型与红线提示链路，验收指标：拆集成功率 10/10、钩子非空率 100%、
 分镜核心字段完整率 100%、红线 7 类全内置命中）。
@@ -133,7 +167,7 @@ python -m unittest discover -s . -p "test_*.py" -v
 
 本项目以 **MIT License** 开源（见 [LICENSE](LICENSE)），可自由用于学习、商业与二次开发，仅需保留版权与许可声明。
 
-- **版本：** v1.0.0（`python text2script.py --version`）
+- **版本：** v1.1.0（`python text2script.py --version`）
 - **贡献：** 欢迎提交 Issue / PR；功能边界与枚举硬约束见「与周边能力的边界」。
 - **免责声明：** 工具为本地规则引擎，不保证生成内容完全可用；命中红线类别的输出需人工复核后使用。
 
