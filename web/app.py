@@ -7,8 +7,10 @@
 复用 text2script 规则引擎，与 CLI 输出一致：
     python text2script.py --file story.txt --format text
 
-界面语言：简体中文 / 繁体中文 / English（前端切换，仅作用于界面文案；
-输入与输出内容不做翻译）。后端以 error_code + detail 返回错误，由前端按语言渲染。
+输入语言匹配：中文输入 → 中文输出；英文输入 → 英文输出（输出语言字段
+language: zh / en 随 convert 返回）。界面语言：简体中文 / 繁体中文 /
+English（前端切换，仅作用于界面文案；输入与输出内容不做翻译）。
+后端以 error_code + detail 返回错误，由前端按语言渲染。
 
 启动（在 text2script/web 目录下）：
     python app.py
@@ -116,6 +118,7 @@ def convert(raw_text: str) -> dict:
     content = sb.render_storyboard_text(plan, break_by_shot=break_by_shot)
 
     problems = sb.validate_storyboard(plan)
+    language = getattr(plan, "language", "zh")
     return {
         "ok": True,
         # content 为纯分镜稿；AI 声明由前端按界面语言附加（页面展示 / 复制 / 下载）
@@ -123,6 +126,7 @@ def convert(raw_text: str) -> dict:
         "ai_notice": AI_NOTICE,
         "input_type": plan.input_type,
         "input_type_label": plan.input_type_label,
+        "language": language,  # 输出语言：zh（中文输入）/ en（英文输入）
         "cleaned_length": parse.cleaned_length,
         "break_by_shot": break_by_shot,
         "num_episodes": len(plan.episodes),

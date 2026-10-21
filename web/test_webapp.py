@@ -56,6 +56,30 @@ class WebAppTest(unittest.TestCase):
         # 返回输入类型代码，供前端翻译标签
         self.assertIn("input_type", data)
         self.assertIn(data["input_type"], {"one_line", "summary", "excerpt", "outline"})
+        # 中文输入 → 中文输出
+        self.assertEqual(data["language"], "zh")
+        self.assertIn("剧本分镜稿", content)
+
+    def test_convert_english_text_output_english(self):
+        text = (
+            "A delivery rider named Jack gets a strange power: he can read minds. "
+            "One day, an old woman asks him for help. Her grandson has been "
+            "kidnapped by gangsters. Jack hesitates at first, but he remembers "
+            "his promise to protect the weak. He follows the gangsters to a "
+            "warehouse and confronts them alone."
+        )
+        r = self.client.post("/convert", data={"text": text})
+        self.assertEqual(r.status_code, 200)
+        data = r.get_json()
+        self.assertTrue(data["ok"])
+        # 英文输入 → 英文输出
+        self.assertEqual(data["language"], "en")
+        content = data["content"]
+        self.assertIn("Storyboard script", content)
+        self.assertIn("Episode 1", content)
+        # 纯文字档：无表格装饰符号
+        self.assertNotIn("|", content)
+        self.assertNotIn("*", content)
 
     def test_convert_text_long_break_by_shot(self):
         text = "深夜大雨中，落魄退伍兵陈默在便利店撞见被追杀的少女林晚。" * 40  # >800

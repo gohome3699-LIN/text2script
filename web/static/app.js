@@ -30,6 +30,8 @@
       typeOutline: "大纲/分卷",
       chipCleaned: "清洗后 {n} 字",
       chipEpisodes: "{n} 集",
+      chipLangZh: "中文输出",
+      chipLangEn: "英文输出",
       chipBreakByShot: "超过 800 字 · 按分镜节点分段",
       chipCompact: "800 字以内 · 紧凑连排",
       chipSensitive: "⚠ 命中红线：{list}（请人工确认）",
@@ -73,6 +75,8 @@
       typeOutline: "大綱/分卷",
       chipCleaned: "清洗後 {n} 字",
       chipEpisodes: "{n} 集",
+      chipLangZh: "中文輸出",
+      chipLangEn: "英文輸出",
       chipBreakByShot: "超過 800 字 · 按分鏡節點分段",
       chipCompact: "800 字以內 · 緊湊連排",
       chipSensitive: "⚠ 命中紅線：{list}（請人工確認）",
@@ -117,6 +121,8 @@
       typeOutline: "Outline / volumes",
       chipCleaned: "{n} chars after cleaning",
       chipEpisodes: "{n} episode(s)",
+      chipLangZh: "Chinese output",
+      chipLangEn: "English output",
       chipBreakByShot: "Over 800 chars · split at storyboard nodes",
       chipCompact: "Within 800 chars · compact layout",
       chipSensitive: "⚠ Safety flag: {list} (please review manually)",
@@ -339,6 +345,12 @@
     var chips = [];
     var typeKey = data.input_type && INPUT_TYPE_KEYS[data.input_type];
     chips.push('<span class="chip">' + escapeHtml(typeKey ? t(typeKey) : data.input_type_label) + "</span>");
+    // 输出语言 chip：中文输入→中文输出，英文输入→英文输出
+    chips.push(
+      '<span class="chip dim">' +
+        escapeHtml(data.language === "en" ? t("chipLangEn") : t("chipLangZh")) +
+        "</span>"
+    );
     chips.push('<span class="chip dim">' + escapeHtml(t("chipCleaned", { n: data.cleaned_length })) + "</span>");
     chips.push('<span class="chip dim">' + escapeHtml(t("chipEpisodes", { n: data.num_episodes })) + "</span>");
     chips.push(

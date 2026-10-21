@@ -37,6 +37,13 @@ SCENE_TIMES = ["清晨", "日", "黄昏", "夜"]
 CHARACTER_ROLES = ["主角", "配角", "反派"]
 HOOK_TYPES = ["悬念", "反转", "危机", "新信息"]
 
+# 英文枚举（输入英文 -> 输出英文时使用）
+SHOT_SIZES_EN = ["Wide", "Full", "Medium", "Close-up", "Extreme Close-up"]
+CAMERAS_EN = ["Static", "Push in", "Pull back", "Pan", "Tilt", "Track"]
+SCENE_TIMES_EN = ["Dawn", "Day", "Dusk", "Night"]
+CHARACTER_ROLES_EN = ["Protagonist", "Supporting", "Antagonist"]
+HOOK_TYPES_EN = ["Suspense", "Twist", "Crisis", "New Info"]
+
 # 情绪-表情-音调词典（初始版，引用 M0-4 T04；后续 T14 做完整映射）
 EMOTION_DICT = {
     "平静": ("神情如常", "平稳"),
@@ -52,6 +59,24 @@ EMOTION_DICT = {
     "迟疑": ("眼神闪躲、动作停顿", "迟疑低压"),
 }
 
+# 英文情绪-表情-音调词典
+EMOTION_DICT_EN = {
+    "Calm": ("expression normal", "steady"),
+    "Angry": ("brow furrowed, jaw clenched", "sharp and fast"),
+    "Sad": ("eyes reddening, gaze lowered", "low and broken"),
+    "Surprised": ("pupils dilated, mouth slightly open", "rising and short"),
+    "Afraid": ("face paling, stepping back", "trembling and hushed"),
+    "Happy": ("corners of mouth up, eyes curved", "light and bright"),
+    "Indifferent": ("expressionless, flat gaze", "steady and flat"),
+    "Tense": ("lips pressed, eyes shifting", "slightly trembling"),
+    "Proud": ("chin raised, faint smile", "slow and unhurried"),
+    "Focused": ("eyes fixed, body leaning in", "steady"),
+    "Hesitant": ("eyes darting, movement paused", "hesitant and low"),
+}
+
+# 英文台词长度按词数计（中文按字数 35 字；英文 35 字符太短）
+LINE_MAX_WORDS = 35
+
 # 冲突线索词（用于从素材中定位"核心冲突"句）
 _CONFLICT_KEYWORDS = [
     "却", "但", "竟然", "居然", "没想到", "忽然", "突然", "背叛", "发现",
@@ -59,8 +84,24 @@ _CONFLICT_KEYWORDS = [
     "输", "反目", "失踪", "危机", "逼", "骗", "误会", "离开", "放弃",
 ]
 
+# 英文冲突线索词（英文模式核心冲突句定位）
+_EN_CONFLICT_KEYWORDS = [
+    "but", "however", "yet", "suddenly", "unexpectedly", "all of a sudden",
+    "discover", "discovered", "secret", "mystery", "truth", "betray",
+    "betrayed", "threat", "danger", "kill", "killed", "save", "rescue",
+    "escape", "trap", "conspiracy", "plot", "fail", "failed", "lost",
+    "lose", "revenge", "enemy", "attack", "chase", "hidden", "reveal",
+    "revealed", "turns out", "in danger",
+]
+
 # 反派线索词（用于识别反派角色）
 _VILLAIN_KEYWORDS = ["反派", "敌人", "仇家", "杀手", "对头", "宿敌", "幕后"]
+
+# 英文反派线索词（识别反派角色，英文模式）
+_EN_VILLAIN_KEYWORDS = [
+    "villain", "enemy", "antagonist", "killer", "assassin", "rival",
+    "thug", "boss", "gangster", "hunter",
+]
 
 # 名词角色标记：说话人提取
 _SPEAKER_PATTERNS = [
@@ -150,6 +191,42 @@ _TIME_KEYWORDS = {
     "夜": ["夜晚", "深夜", "夜里", "午夜", "晚上", "夜色"],
 }
 
+# 英文时间关键词（英文模式场景时间；顺序即优先级）
+_EN_TIME_KEYWORDS = {
+    "Dawn": ["dawn", "sunrise", "early morning", "morning"],
+    "Dusk": ["dusk", "twilight", "sunset", "evening"],
+    "Night": ["night", "midnight", "late night"],
+    "Day": ["noon", "daytime", "afternoon", "day"],
+}
+
+# 英文地点关键词（英文模式场景地点；命中即取该句为场景）
+_EN_LOCATION_KEYWORDS = (
+    "office", "room", "house", "home", "apartment", "street", "road",
+    "alley", "forest", "woods", "hospital", "school", "factory",
+    "warehouse", "bar", "restaurant", "cafe", "coffee", "rooftop",
+    "hallway", "corridor", "station", "airport", "plaza", "square",
+    "villa", "pier", "dock", "battlefield", "city", "town", "village",
+    "shop", "store", "park", "river", "bridge", "hotel", "library",
+    "train", "car", "club", "basement", "cave", "temple",
+)
+
+# 英文说话动词（英文模式台词归属：先长词后短词）
+_EN_SPEECH_VERBS = (
+    "whispered", "shouted", "answered", "replied", "murmured", "demanded",
+    "snapped", "yelled", "sighed", "muttered", "screamed", "called",
+    "said", "asked",
+)
+
+# 英文人名提取时忽略的句首大写词（代词/冠词/连词等）
+_EN_NAME_STOP = {
+    "He", "She", "It", "They", "The", "A", "An", "And", "But", "Then",
+    "His", "Her", "This", "That", "These", "Those", "We", "I", "You",
+    "There", "Here", "Now", "When", "What", "Who", "How", "Why", "Where",
+}
+
+# 英文引号内台词提取
+_EN_QUOTE_RE = re.compile(r"\"([^\"\n]{1,300})\"")
+
 
 # ------------------- 数据结构（T01 剧本字段 + T02 分镜草稿） -------------------
 
@@ -205,6 +282,7 @@ class Episode:
     warnings: List[str] = field(default_factory=list)   # 规则未覆盖时的提示
     source_text: str = ""        # 本集原始素材文本（T08 角色关系线增强输入）
     relations: List[dict] = field(default_factory=list) # 角色关系线（T08 填充）
+    language: str = "zh"         # 输出语言：zh / en
 
 
 @dataclass
@@ -215,6 +293,7 @@ class EpisodePlan:
     needs_expansion: bool = False
     sensitive_hits: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    language: str = "zh"             # 输入语言：zh（中文）/ en（英文）
 
 
 # ------------------- 文本工具 -------------------
@@ -229,6 +308,43 @@ def _split_sentences(text: str) -> List[str]:
         if p:
             out.append(p)
     return out
+
+
+def _split_sentences_lang(text: Optional[str], language: str = "zh") -> List[str]:
+    """按语言切句：中文按「。！？；」；英文按句点/问号/感叹号后随空格或行尾。"""
+    if not text:
+        return []
+    if language == "en":
+        parts = re.split(r"(?<=[.!?])\s+|\n+", text.strip())
+        out: List[str] = []
+        for p in parts:
+            p = p.strip().strip("\"'")
+            if p:
+                out.append(p)
+        # 无标点整段兜底
+        if not out and text.strip():
+            out = [text.strip().strip("\"'")]
+        return out
+    return _split_sentences(text)
+
+
+def clip_by_words(text: str, max_words: int = LINE_MAX_WORDS) -> str:
+    """把英文台词/旁白压缩到 <= max_words 词，优先在句末标点处截断。"""
+    text = text.strip()
+    if not text:
+        return ""
+    words = text.split()
+    if len(words) <= max_words:
+        return text
+    head = words[:max_words]
+    cut = -1
+    for i in range(len(head) - 1, -1, -1):
+        if head[i].endswith((".", "!", "?")):
+            cut = i
+            break
+    if cut >= 5:
+        return " ".join(head[: cut + 1])
+    return " ".join(head) + "…"
 
 
 def clip_line(text: str, max_len: int = LINE_MAX_LENGTH) -> str:
@@ -262,6 +378,51 @@ def _extract_location(text: str) -> str:
             if loc:
                 return loc
     return "未注明地点"
+
+
+def _normalize_time_en(text: str) -> str:
+    """英文模式：时段关键词归一化；默认 Day。"""
+    lower = text.lower()
+    for time_key, words in _EN_TIME_KEYWORDS.items():
+        for w in words:
+            if re.search(rf"\b{re.escape(w)}\b", lower):
+                return time_key
+    return "Day"
+
+
+def _extract_location_en(text: str) -> str:
+    """英文模式：地点关键词命中即取该词为地点（首字母大写）。"""
+    lower = text.lower()
+    for kw in _EN_LOCATION_KEYWORDS:
+        if re.search(rf"\b{re.escape(kw)}\b", lower):
+            return kw.title()
+    return ""
+
+
+def _extract_scenes_en(text: str) -> List[Scene]:
+    """英文模式提取场景：地点关键词 + 时段枚举；无法识别时给默认场景。"""
+    sentences = _split_sentences_lang(text, "en")
+    scenes: List[Scene] = []
+    seen: set = set()
+    for sent in sentences:
+        loc = _extract_location_en(sent)
+        if loc and loc not in seen:
+            seen.add(loc)
+            scenes.append(
+                Scene(
+                    id=len(scenes) + 1,
+                    location=loc,
+                    time=_normalize_time_en(sent),
+                    setting=clip_by_words(sent, 12),
+                )
+            )
+    if not scenes:
+        scenes.append(
+            Scene(id=1, location="Unnamed Location",
+                  time=_normalize_time_en(text),
+                  setting=clip_by_words(text, 12) or "Main storyline setting")
+        )
+    return scenes
 
 
 def _extract_scenes(text: str) -> List[Scene]:
@@ -346,6 +507,163 @@ def _extract_characters(text: str) -> List[Character]:
             desc = "剧情对照者"
         chars.append(Character(name=name, role=role, description=desc))
     return chars
+
+
+def _looks_like_name_en(name: str) -> bool:
+    """英文模式：像人名的词（首字母大写、不含停用词）。"""
+    return bool(name) and len(name) <= 20 \
+        and re.fullmatch(r"[A-Z][A-Za-z'\-]*", name) \
+        and name not in _EN_NAME_STOP
+
+
+def _extract_characters_en(text: str) -> List[Character]:
+    """英文模式初步角色提取。
+
+    规则：引号后置/前置的「said X / X said / X asked:」结构识别说话人；
+    「said」等动词后无引号时也尝试；频次最高为主角，次高为配角；
+    叙述句含反派线索词时关联的名字标记为反派。
+    """
+    verbs = "|".join(_EN_SPEECH_VERBS)
+    freq: dict = {}
+    for m in _EN_QUOTE_RE.finditer(text):
+        pre = text[max(0, m.start() - 30):m.start()]
+        post = text[m.end():m.end() + 30]
+        hits = [
+            re.search(r"([A-Z][A-Za-z'\-]{1,15})\s+(?:" + verbs + r")\s*[:]?\s*$", pre),
+            re.search(r"^\s*(?:" + verbs + r")\s+([A-Z][A-Za-z'\-]{1,15})", post),
+            re.search(r"^\s*([A-Z][A-Za-z'\-]{1,15})\s+(?:" + verbs + r")", post),
+            re.search(r"([A-Z][A-Za-z'\-]{1,15})\s+(?:" + verbs + r")\s*$", pre),
+            re.search(r"([A-Z][A-Za-z'\-]{1,15})(?:\s+\w+){0,4}\s+(?:"
+                      + verbs + r")\s*[:]?\s*$", pre),
+        ]
+        for mh in hits:
+            if mh:
+                name = mh.group(1).strip()
+                if _looks_like_name_en(name):
+                    freq[name] = freq.get(name, 0) + 1
+                break
+
+    if not freq:
+        return [Character(name="Protagonist", role="Protagonist",
+                          description="Plot driver (to be refined)")]
+
+    ordered = sorted(freq.items(), key=lambda kv: kv[1], reverse=True)
+    chars: List[Character] = []
+    villain_names: set = set()
+    narration = re.sub(r"\"[^\"\n]{1,300}\"", "", text)
+    for sent in _split_sentences_lang(narration, "en"):
+        lower = sent.lower()
+        if any(re.search(rf"\b{re.escape(kw)}\b", lower)
+               for kw in _EN_VILLAIN_KEYWORDS):
+            for name, _ in ordered:
+                if re.search(rf"\b{re.escape(name)}\b", sent):
+                    villain_names.add(name)
+
+    for i, (name, _cnt) in enumerate(ordered[:3]):
+        if name in villain_names:
+            role, desc = "Antagonist", "Conflict creator"
+        elif i == 0:
+            role, desc = "Protagonist", "Plot driver"
+        else:
+            role, desc = "Supporting", "Counterpart"
+        chars.append(Character(name=name, role=role, description=desc))
+    return chars
+
+
+def _infer_quote_speaker_en(text: str, m: re.Match,
+                            known_names: List[str]) -> Optional[str]:
+    """英文模式：从引号句前后文推断说话人。
+
+    优先级：后文「said X / X said」> 前文「X said / X said:」。
+    仅在窗口内出现已知角色名时归属，否则返回 None（由调用方归 Narrator）。
+    """
+    if not known_names:
+        return None
+    names = sorted(known_names, key=len, reverse=True)
+    pre = text[max(0, m.start() - 30):m.start()]
+    post = text[m.end():m.end() + 30]
+    verbs = "|".join(_EN_SPEECH_VERBS)
+    for n in names:
+        if n == "Narrator":
+            continue
+        pattern = r"\b" + re.escape(n) + r"\b"
+        if re.search(r"(?:" + verbs + r")\s+" + pattern, post, re.IGNORECASE):
+            return n
+        if re.search(pattern + r"\s+(?:" + verbs + r")", post, re.IGNORECASE):
+            return n
+        if re.search(pattern + r"\s+(?:" + verbs + r")\s*[:]?\s*$",
+                     pre, re.IGNORECASE):
+            return n
+        if re.search(pattern + r"(?:\s+\w+){0,4}\s+(?:" + verbs
+                     + r")\s*[:]?\s*$", pre, re.IGNORECASE):
+            return n
+        if ":" in pre:
+            head = re.split(r"[:]", pre)[-1]
+            if re.search(pattern, head, re.IGNORECASE):
+                return n
+    return None
+
+
+def _extract_lines_en(text: str,
+                      known_names: Optional[List[str]] = None) -> List[Line]:
+    """英文模式提取台词与旁白：说话人 + 语气 + 文本；文本 <=35 词。
+
+    规则：优先双引号句；按后文/前文说话动词归属已知角色，
+    无明确说话人归 Narrator；无引号时把开头叙事句提炼为旁白。
+    """
+    known_names = known_names or []
+    lines: List[Line] = []
+    used: set = set()
+
+    for m in _EN_QUOTE_RE.finditer(text):
+        content = m.group(1).strip()
+        if not content:
+            continue
+        clipped = clip_by_words(content, LINE_MAX_WORDS)
+        if not clipped:
+            continue
+        if any(ln.text == clipped for ln in lines):
+            continue
+        speaker = _infer_quote_speaker_en(text, m, known_names)
+        if speaker and (speaker, clipped) not in used:
+            used.add((speaker, clipped))
+            lines.append(Line(speaker=speaker, tone="steady", text=clipped))
+            continue
+        lines.append(Line(speaker="Narrator", tone="steady", text=clipped))
+
+    if not lines:
+        narr = _split_sentences_lang(text, "en")
+        if narr:
+            clipped = clip_by_words(narr[0], LINE_MAX_WORDS)
+            if clipped:
+                lines.append(Line(speaker="Narrator", tone="steady",
+                                  text=clipped))
+    return lines
+
+
+def _extract_core_conflict_en(text: str) -> Tuple[str, List[str]]:
+    """英文模式定位核心冲突句：冲突线索词 > 情绪/疑问句 > 首句。"""
+    sents = _split_sentences_lang(text, "en")
+    if not sents:
+        return "", ["No sentences found in the source text; expand the draft first"]
+
+    for sent in sents:
+        lower = sent.lower()
+        if any(re.search(rf"\b{re.escape(kw)}\b", lower)
+               for kw in _EN_CONFLICT_KEYWORDS):
+            return clip_by_words(sent, 40), []
+
+    for sent in sents:
+        if sent.rstrip().endswith(("?", "!")) or any(
+            w in sent.lower()
+            for w in ["angry", "shock", "fear", "afraid", "cry", "shout",
+                      "hate", "despair", "panic"]
+        ):
+            return clip_by_words(sent, 40), []
+
+    warn = ["No obvious conflict sentence found; first sentence used as "
+            "core conflict, please review"]
+    return clip_by_words(sents[0], 40), warn
 
 
 def _infer_quote_speaker(text: str, m: re.Match,
@@ -506,6 +824,50 @@ def build_hook(conflict: str, hook_type: str = "") -> Tuple[str, str]:
     return hook, hook_type
 
 
+def build_hook_en(conflict: str, hook_type: str = "") -> Tuple[str, str]:
+    """英文模式生成集末钩子（确定性规则；hook_type 为空时自动推断）。"""
+    if not conflict:
+        conflict = "the plot suddenly changes"
+    if hook_type not in HOOK_TYPES_EN:
+        lower = conflict.lower()
+        if any(k in lower for k in ["but", "turns out", "suddenly",
+                                    "unexpectedly", "discover", "discovered",
+                                    "truth", "secret", "reveal", "revealed"]):
+            hook_type = "Twist"
+        elif any(k in lower for k in ["threat", "danger", "kill", "kidnap",
+                                      "force", "trap", "attack", "crisis",
+                                      "hostage"]):
+            hook_type = "Crisis"
+        elif conflict.rstrip().endswith("?"):
+            hook_type = "Suspense"
+        else:
+            hook_type = "New Info"
+
+    subject = " ".join(conflict.split()[:12]).rstrip(".,!?")
+    first_clause = re.split(r"[,;:]", " ".join(conflict.split()[:12]),
+                            maxsplit=1)[0].strip()
+    if first_clause:
+        subject = first_clause
+    # 过滤引导副词/连词（Suddenly/Then/But 等），避免钩子主语过短
+    lead_words = {"suddenly", "then", "but", "however", "yet", "meanwhile",
+                  "just", "so", "now", "after", "when", "before"}
+    subj_words = subject.split()
+    if subj_words and subj_words[0].strip(".,!?").lower() in lead_words:
+        rest = " ".join(subj_words[1:])
+        if rest:
+            subject = rest
+        else:            # 首段只有引导词（如 "Suddenly,"），取冲突句余下部分
+            subject = " ".join(conflict.split()[1:12]).rstrip(".,!?").strip()
+    template_map = {
+        "Suspense": "Just then, the unresolved mystery behind {subject} resurfaces",
+        "Twist": "{subject} seems settled, but the real twist has only just begun",
+        "Crisis": "Crisis creeps in, and {subject} is left with no way back",
+        "New Info": "A new clue about {subject} arrives out of nowhere, and everything shifts",
+    }
+    hook = template_map[hook_type].format(subject=subject)
+    return hook, hook_type
+
+
 def _plan_shots(
     text: str, target_duration: int, lines: List[Line],
     characters: List[Character], shots_per_minute: int = SHOTS_PER_MINUTE,
@@ -560,11 +922,112 @@ def _plan_shots(
     return shots
 
 
-def _build_episode(
+def _plan_shots_en(
+    text: str, target_duration: int, lines: List[Line],
+    characters: List[Character], shots_per_minute: int = SHOTS_PER_MINUTE,
+) -> List[Shot]:
+    """英文模式生成分镜草稿：18--22 镜/分钟密度，单镜 2--5 秒。"""
+    n = max(1, round(target_duration * shots_per_minute / 60))
+    n = max(n, (target_duration + SHOT_MAX_DURATION - 1) // SHOT_MAX_DURATION)
+    n = min(n, target_duration // SHOT_MIN_DURATION)
+    base, rem = divmod(target_duration, n)
+    durations = [base + (1 if i < rem else 0) for i in range(n)]
+
+    lead = characters[0].name if characters else "Protagonist"
+    shot_size_seq = ["Wide", "Full", "Medium", "Close-up", "Close-up", "Medium"]
+    camera_seq = ["Static", "Push in", "Pull back", "Pan", "Tilt", "Track"]
+
+    shots: List[Shot] = []
+    for i in range(n):
+        if i == 0:
+            size = "Wide"
+        elif i == n - 1:
+            size = "Close-up"
+        else:
+            size = shot_size_seq[i % len(shot_size_seq)]
+        camera = camera_seq[i % len(camera_seq)]
+        if lines:
+            line_idx = min(len(lines) - 1, round(i * len(lines) / n))
+            line = lines[line_idx]
+            dialogue = line.text
+            speaker = line.speaker
+        else:
+            dialogue, speaker = None, lead
+        emotion = "Focused"
+        expression, tone = EMOTION_DICT_EN[emotion]
+        visual = clip_by_words(
+            f"{speaker} advances the plot in the scene, moves and positions "
+            f"fitting this shot's mood", 25
+        )
+        shots.append(
+            Shot(
+                shot=i + 1,
+                shot_size=size,
+                camera=camera,
+                visual=visual,
+                dialogue=dialogue,
+                character=speaker,
+                emotion=emotion,
+                expression=expression,
+                tone=tone,
+                duration=durations[i],
+            )
+        )
+    return shots
+
+
+def _build_episode_en(
     chunk: str, episode_no: int, target_duration: int,
     prev_hook: str = "", shots_per_minute: int = SHOTS_PER_MINUTE,
 ) -> Episode:
-    """由一个文本块构建一集。"""
+    """由一个文本块构建一集（英文模式）。"""
+    warnings: List[str] = []
+    conflict, conflict_warn = _extract_core_conflict_en(chunk)
+    warnings.extend(conflict_warn)
+    if len(conflict.split()) < CONFLICT_MIN_LENGTH:
+        conflict = "The plot advances into the unknown as the conflict escalates"
+        warnings.append("Core conflict is too short; fallback text used")
+
+    hook, hook_type = build_hook_en(conflict)
+    if len(hook.split()) < HOOK_MIN_LENGTH:
+        hook, hook_type = "The situation changes abruptly, and crisis is imminent", "Crisis"
+
+    scenes = _extract_scenes_en(chunk)
+    characters = _extract_characters_en(chunk)
+    lines = _extract_lines_en(chunk, [c.name for c in characters])
+    if not lines:
+        warnings.append("No dialogue extracted; consider adding conversation or narration")
+
+    continuity = f"Continuing from episode {episode_no - 1}: {prev_hook}" if prev_hook else ""
+    shots = _plan_shots_en(chunk, target_duration, lines, characters,
+                           shots_per_minute)
+
+    return Episode(
+        episode=episode_no,
+        target_duration=target_duration,
+        core_conflict=conflict,
+        episode_hook=hook,
+        hook_type=hook_type,
+        scenes=scenes,
+        characters=characters,
+        lines=lines,
+        shots=shots,
+        continuity=continuity,
+        warnings=warnings,
+        source_text=chunk,
+        language="en",
+    )
+
+
+def _build_episode(
+    chunk: str, episode_no: int, target_duration: int,
+    prev_hook: str = "", shots_per_minute: int = SHOTS_PER_MINUTE,
+    language: str = "zh",
+) -> Episode:
+    """由一个文本块构建一集（language: zh/en）。"""
+    if language == "en":
+        return _build_episode_en(chunk, episode_no, target_duration,
+                                 prev_hook, shots_per_minute)
     warnings: List[str] = []
     conflict, conflict_warn = _extract_core_conflict(chunk)
     warnings.extend(conflict_warn)
@@ -610,11 +1073,19 @@ _CHAPTER_TITLE_RE = re.compile(
     r"^第[0-9一二三四五六七八九十百千〇零]{1,6}[卷篇章回部](?:[\s:：、\-—]|$)"
 )
 
+# 英文章节标题模式（Chapter/Part/Act/Episode/Scene/Volume/Book + 数字或罗马数字）
+_CHAPTER_TITLE_RE_EN = re.compile(
+    r"^(?:chapter|part|act|episode|scene|volume|book)\s+"
+    r"[0-9]{1,4}|[ivxlcdm]{1,8}(?:[\s:：.\-—]|$)",
+    re.IGNORECASE,
+)
+
 
 def _is_pure_title_block(text: str) -> bool:
     """判断文本块是否只是章节标题（无正文字句，不应独立成集）。
 
-    例如大纲开头的「第一卷 初入江湖」。含正文（句末标点）或过长的块不算。
+    例如大纲开头的「第一卷 初入江湖」或 "Chapter 1"。
+    含正文（句末标点）或过长的块不算。
     """
     s = text.strip()
     if not s or len(s) > 30:
@@ -622,7 +1093,10 @@ def _is_pure_title_block(text: str) -> bool:
     if any(p in s for p in "。！？；"):
         return False
     lines = [ln.strip() for ln in s.splitlines() if ln.strip()]
-    return bool(lines) and all(_CHAPTER_TITLE_RE.match(ln) for ln in lines)
+    return bool(lines) and all(
+        _CHAPTER_TITLE_RE.match(ln) or _CHAPTER_TITLE_RE_EN.match(ln)
+        for ln in lines
+    )
 
 
 def _merge_pure_title_blocks(chunks: List[str]) -> List[str]:
@@ -668,19 +1142,26 @@ def split_episodes(
     episodes: List[Episode] = []
     warnings: List[str] = []
     prev_hook = ""
+    language = getattr(parse_result, "language", "zh")
     for i, chunk in enumerate(chunk_texts, start=1):
         if not chunk.strip():
             continue
         ep = _build_episode(chunk, i, target_duration, prev_hook,
-                            shots_per_minute)
+                            shots_per_minute, language=language)
         episodes.append(ep)
         prev_hook = ep.episode_hook
         warnings.extend(ep.warnings)
 
     if parse_result.input_type == ip.TYPE_ONE_LINE and parse_result.needs_expansion:
-        warnings.insert(
-            0, "输入为一句话创意，建议先按 V1 模板扩写为剧本底稿后再拆集"
-        )
+        if language == "en":
+            warnings.insert(
+                0, "Input is a one-line idea; consider expanding it into a "
+                   "full draft script before splitting"
+            )
+        else:
+            warnings.insert(
+                0, "输入为一句话创意，建议先按 V1 模板扩写为剧本底稿后再拆集"
+            )
 
     return EpisodePlan(
         episodes=episodes,
@@ -689,6 +1170,7 @@ def split_episodes(
         needs_expansion=parse_result.needs_expansion,
         sensitive_hits=list(parse_result.sensitive_hits),
         warnings=warnings,
+        language=language,
     )
 
 
@@ -710,36 +1192,58 @@ def validate_plan(plan: EpisodePlan) -> List[str]:
     """逐项校验 T01/T02 约束，返回违规列表（空列表 = 通过）。
 
     覆盖：集序、时长、核心冲突/钩子长度与类型、场景字段、角色枚举、
-    台词单句字数、分镜景别/运镜/时长/密度。校验失败项用于测试与 T21 质量自检。
+    台词单句字数/词数、分镜景别/运镜/时长/密度。校验失败项用于测试与 T21 质量自检。
+    英文模式（plan.language == "en"）按英文枚举与词数校验。
     """
     problems: List[str] = []
     eps = plan.episodes
     if not eps:
         return ["拆集结果为空"]
 
+    en = getattr(plan, "language", "zh") == "en"
+    hook_types = HOOK_TYPES_EN if en else HOOK_TYPES
+    times = SCENE_TIMES_EN if en else SCENE_TIMES
+    roles = CHARACTER_ROLES_EN if en else CHARACTER_ROLES
+    sizes = SHOT_SIZES_EN if en else SHOT_SIZES
+    cams = CAMERAS_EN if en else CAMERAS
+    emotions = EMOTION_DICT_EN if en else EMOTION_DICT
+
     for idx, ep in enumerate(eps, start=1):
-        tag = f"第{ep.episode}集"
+        if en:
+            tag = f"Episode {ep.episode}"
+        else:
+            tag = f"第{ep.episode}集"
         if ep.episode != idx:
             problems.append(f"{tag}：集序应为 {idx}，实际 {ep.episode}")
         if not 60 <= ep.target_duration <= 90:
             problems.append(f"{tag}：目标时长 {ep.target_duration} 超出 60--90 秒")
-        if len(ep.core_conflict) < CONFLICT_MIN_LENGTH:
-            problems.append(f"{tag}：核心冲突过短 ({len(ep.core_conflict)} 字)")
-        if len(ep.episode_hook) < HOOK_MIN_LENGTH:
-            problems.append(f"{tag}：集末钩子过短 ({len(ep.episode_hook)} 字)")
-        if ep.hook_type not in HOOK_TYPES:
+        if en:
+            if len(ep.core_conflict.split()) < CONFLICT_MIN_LENGTH:
+                problems.append(f"{tag}：核心冲突过短 ({len(ep.core_conflict.split())} 词)")
+            if len(ep.episode_hook.split()) < HOOK_MIN_LENGTH:
+                problems.append(f"{tag}：集末钩子过短 ({len(ep.episode_hook.split())} 词)")
+        else:
+            if len(ep.core_conflict) < CONFLICT_MIN_LENGTH:
+                problems.append(f"{tag}：核心冲突过短 ({len(ep.core_conflict)} 字)")
+            if len(ep.episode_hook) < HOOK_MIN_LENGTH:
+                problems.append(f"{tag}：集末钩子过短 ({len(ep.episode_hook)} 字)")
+        if ep.hook_type not in hook_types:
             problems.append(f"{tag}：钩子类型 {ep.hook_type} 不在枚举内")
         if not ep.scenes:
             problems.append(f"{tag}：场景序列为空")
         for sc in ep.scenes:
-            if sc.time not in SCENE_TIMES:
+            if sc.time not in times:
                 problems.append(f"{tag}：场景时间 {sc.time} 不在枚举内")
         for ch in ep.characters:
-            if ch.role not in CHARACTER_ROLES:
+            if ch.role not in roles:
                 problems.append(f"{tag}：角色类型 {ch.role} 不在枚举内")
         for ln in ep.lines:
-            if len(ln.text) > LINE_MAX_LENGTH:
-                problems.append(f"{tag}：台词超 {LINE_MAX_LENGTH} 字：{ln.text}")
+            if en:
+                if len(ln.text.split()) > LINE_MAX_WORDS:
+                    problems.append(f"{tag}：台词超 {LINE_MAX_WORDS} 词：{ln.text}")
+            else:
+                if len(ln.text) > LINE_MAX_LENGTH:
+                    problems.append(f"{tag}：台词超 {LINE_MAX_LENGTH} 字：{ln.text}")
         if not ep.shots:
             problems.append(f"{tag}：分镜草稿为空")
             continue
@@ -747,13 +1251,13 @@ def validate_plan(plan: EpisodePlan) -> List[str]:
         if total != ep.target_duration:
             problems.append(f"{tag}：分镜总时长 {total} != 目标时长 {ep.target_duration}")
         for s in ep.shots:
-            if s.shot_size not in SHOT_SIZES:
+            if s.shot_size not in sizes:
                 problems.append(f"{tag}：景别 {s.shot_size} 不在枚举内")
-            if s.camera not in CAMERAS:
+            if s.camera not in cams:
                 problems.append(f"{tag}：运镜 {s.camera} 不在枚举内")
             if not SHOT_MIN_DURATION <= s.duration <= SHOT_MAX_DURATION:
                 problems.append(f"{tag}：镜时长 {s.duration} 超出 2--5 秒")
-            if s.emotion not in EMOTION_DICT:
+            if s.emotion not in emotions:
                 problems.append(f"{tag}：情绪 {s.emotion} 不在词典内")
         actual_per_min = len(ep.shots) / ep.target_duration * 60
         if not 18 <= actual_per_min <= 22:
@@ -766,48 +1270,109 @@ def validate_plan(plan: EpisodePlan) -> List[str]:
 # ------------------- 渲染 -------------------
 
 
-def _line_to_md(ln: Line) -> str:
+def _line_to_md(ln: Line, language: str = "zh") -> str:
+    if language == "en":
+        who = "Narrator" if ln.speaker == "Narrator" else ln.speaker
+        return f"- [{who}] (tone: {ln.tone}) \"{ln.text}\""
     who = "旁白" if ln.speaker == "旁白" else ln.speaker
     return f"- 【{who}】（语气：{ln.tone}）“{ln.text}”"
 
 
 def render_markdown(plan: EpisodePlan, with_shots: bool = True) -> str:
-    """按 M0-1 Markdown 模板渲染全部分集剧本（含可选分镜表）。"""
+    """按 M0-1 Markdown 模板渲染全部分集剧本（含可选分镜表）。
+
+    英文模式（plan.language == "en"）使用英文框架标签。
+    """
+    en = getattr(plan, "language", "zh") == "en"
     out: List[str] = []
-    out.append(f"# 分集剧本（输入类型：{plan.input_type_label}）")
-    if plan.needs_expansion:
-        out.append("> 提示：输入为一句话创意，建议先扩写为剧本底稿。")
+    if en:
+        out.append(f"# Episode Scripts (input type: {plan.input_type_label})")
+        if plan.needs_expansion:
+            out.append("> Tip: the input is a one-line idea; consider "
+                       "expanding it into a draft script first.")
+    else:
+        out.append(f"# 分集剧本（输入类型：{plan.input_type_label}）")
+        if plan.needs_expansion:
+            out.append("> 提示：输入为一句话创意，建议先扩写为剧本底稿。")
     if plan.sensitive_hits:
-        out.append(f"> ⚠ 命中红线类别：{'、'.join(plan.sensitive_hits)}（请人工确认后继续）")
+        if en:
+            out.append("> ⚠ Sensitive categories hit: "
+                       f"{'、'.join(plan.sensitive_hits)} "
+                       "(please review before continuing)")
+        else:
+            out.append(f"> ⚠ 命中红线类别：{'、'.join(plan.sensitive_hits)}（请人工确认后继续）")
 
     for ep in plan.episodes:
         out.append("")
-        out.append(f"## 第 {ep.episode} 集（目标时长 60--90 秒）")
-        if ep.continuity:
-            out.append(f"- 承接：{ep.continuity}")
-        out.append(f"- 核心冲突：{ep.core_conflict}")
-        out.append(f"- 集末钩子（{ep.hook_type}）：{ep.episode_hook}")
-        out.append("")
-        out.append("### 出场角色")
-        for ch in ep.characters:
-            out.append(f"- {ch.name}（{ch.description}）")
-        if ep.relations:
+        if en:
+            out.append(f"## Episode {ep.episode} (target 60--90 seconds)")
+            if ep.continuity:
+                out.append(f"- Continuing: {ep.continuity}")
+            out.append(f"- Core conflict: {ep.core_conflict}")
+            out.append(f"- Episode hook ({ep.hook_type}): {ep.episode_hook}")
             out.append("")
-            out.append("### 角色关系")
-            for rel in ep.relations:
+            out.append("### Characters")
+            for ch in ep.characters:
+                out.append(f"- {ch.name} ({ch.description})")
+            if ep.relations:
+                out.append("")
+                out.append("### Character relations")
+                for rel in ep.relations:
+                    out.append(
+                        f"- {rel.get('source')} x {rel.get('target')}"
+                        f" ({rel.get('rel_type')}): {rel.get('evidence')}"
+                    )
+            out.append("")
+            out.append("### Scenes")
+            for sc in ep.scenes:
                 out.append(
-                    f"- {rel.get('source')} × {rel.get('target')}"
-                    f"（{rel.get('rel_type')}）：{rel.get('evidence')}"
+                    f"{sc.id}. Scene: {sc.location} ({sc.time}, "
+                    f"interior/exterior) -- {sc.setting}"
                 )
-        out.append("")
-        out.append("### 场景序列")
-        for sc in ep.scenes:
-            out.append(f"{sc.id}. 场景：{sc.location}（{sc.time}，内/外）——{sc.setting}")
-        out.append("")
-        out.append("### 对白与旁白")
-        for ln in ep.lines:
-            out.append(_line_to_md(ln))
-        if with_shots and ep.shots:
+            out.append("")
+            out.append("### Dialogue & narration")
+            for ln in ep.lines:
+                out.append(_line_to_md(ln, "en"))
+            if with_shots and ep.shots:
+                out.append("")
+                out.append("### Shot drafts (for module 2)")
+                out.append("| Shot | Size | Camera | Visual | Dialogue/Narration "
+                           "| Character | Emotion | Expression | Tone | Duration |")
+                out.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+                for s in ep.shots:
+                    dialogue = s.dialogue if s.dialogue else "(none)"
+                    out.append(
+                        f"| {s.shot} | {s.shot_size} | {s.camera} | {s.visual} "
+                        f"| {dialogue} | {s.character} | {s.emotion} | "
+                        f"{s.expression} | {s.tone} | {s.duration} |"
+                    )
+        else:
+            out.append(f"## 第 {ep.episode} 集（目标时长 60--90 秒）")
+            if ep.continuity:
+                out.append(f"- 承接：{ep.continuity}")
+            out.append(f"- 核心冲突：{ep.core_conflict}")
+            out.append(f"- 集末钩子（{ep.hook_type}）：{ep.episode_hook}")
+            out.append("")
+            out.append("### 出场角色")
+            for ch in ep.characters:
+                out.append(f"- {ch.name}（{ch.description}）")
+            if ep.relations:
+                out.append("")
+                out.append("### 角色关系")
+                for rel in ep.relations:
+                    out.append(
+                        f"- {rel.get('source')} × {rel.get('target')}"
+                        f"（{rel.get('rel_type')}）：{rel.get('evidence')}"
+                    )
+            out.append("")
+            out.append("### 场景序列")
+            for sc in ep.scenes:
+                out.append(f"{sc.id}. 场景：{sc.location}（{sc.time}，内/外）——{sc.setting}")
+            out.append("")
+            out.append("### 对白与旁白")
+            for ln in ep.lines:
+                out.append(_line_to_md(ln))
+        if with_shots and ep.shots and not en:
             out.append("")
             out.append("### 分镜草稿（供模块二细化）")
             out.append("| 镜号 | 景别 | 运镜 | 画面内容 | 台词/旁白 | 角色 | 情绪 | 表情 | 音调 | 时长 |")
@@ -820,7 +1385,10 @@ def render_markdown(plan: EpisodePlan, with_shots: bool = True) -> str:
                 )
         if ep.warnings:
             out.append("")
-            out.append(f"> 生成提示：{'；'.join(ep.warnings)}")
+            if en:
+                out.append(f"> Generation notes: {'; '.join(ep.warnings)}")
+            else:
+                out.append(f"> 生成提示：{'；'.join(ep.warnings)}")
     return "\n".join(out)
 
 

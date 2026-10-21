@@ -404,6 +404,338 @@ def _pick_transition_for_scene(scene_text: str) -> str:
     return TRANSITION_FORMULAS[4]
 
 
+# =================== 英文模式（输入英文 -> 输出英文） ===================
+
+CAMERA_LIBRARY_EN: Dict[str, List[str]] = {
+    "Push in": [
+        "slow push in", "fast push", "push from wide to close-up",
+        "pupil zoom push", "breathing push-pull", "impact push", "through push",
+    ],
+    "Pull back": [
+        "slow pull back", "fast pull away", "character shrinks pull",
+        "environment reveal pull", "transition pull", "truth reveal pull",
+        "emotional detach pull",
+    ],
+    "Pan": [
+        "panoramic pan", "vertical tilt pan", "quick whip pan",
+        "slow follow pan", "pan to behind", "whip pan", "back and forth pan",
+    ],
+    "Tilt": [
+        "low tilt up", "high tilt down", "dutch tilt", "orbit tilt",
+    ],
+    "Track": [
+        "handheld track", "side track", "back follow track", "front follow track",
+        "accelerate track", "first-person track", "low angle track",
+    ],
+    "Static": ["fixed camera"],
+}
+
+_EMOTION_CAMERA_NOTE_EN: Dict[str, str] = {
+    "Angry": "impact push",
+    "Sad": "slow push in",
+    "Surprised": "pupil zoom push",
+    "Afraid": "fast push",
+    "Happy": "slow push in",
+    "Indifferent": "fixed camera",
+    "Tense": "breathing push-pull",
+    "Proud": "slow pull back",
+    "Focused": "slow push in",
+    "Hesitant": "breathing push-pull",
+    "Calm": "fixed camera",
+}
+
+_EMOTION_SIZE_EN: Dict[str, str] = {
+    "Angry": "Close-up",
+    "Sad": "Close-up",
+    "Surprised": "Close-up",
+    "Afraid": "Close-up",
+    "Happy": "Medium",
+    "Indifferent": "Medium",
+    "Tense": "Close-up",
+    "Proud": "Medium",
+    "Focused": "Medium",
+    "Hesitant": "Close-up",
+    "Calm": "Medium",
+}
+
+_EMOTION_CAMERA_EN: Dict[str, str] = {
+    "Angry": "Push in",
+    "Sad": "Push in",
+    "Surprised": "Push in",
+    "Afraid": "Push in",
+    "Happy": "Push in",
+    "Indifferent": "Static",
+    "Tense": "Push in",
+    "Proud": "Pull back",
+    "Focused": "Push in",
+    "Hesitant": "Push in",
+    "Calm": "Static",
+}
+
+_BIG_SCENE_KEYWORDS_EN = [
+    "battlefield", "battle", "palace", "city", "army", "crowd", "square",
+    "mountain", "sea", "ocean", "vast", "war", "kingdom", "desert", "plaza",
+    "millions",
+]
+_BIG_SCENE_SIZE_EN = "Wide"
+_BIG_SCENE_CAMERA_EN = "Pull back"
+
+_ACTION_CAMERA_KEYWORDS_EN = [
+    "run", "running", "chase", "chasing", "jump", "jumping", "flee", "fleeing",
+    "escape", "dash", "rush", "stab", "slash", "punch", "kick", "fight",
+    "fall", "falling", "accelerate", "dodge", "leap",
+]
+_ACTION_CAMERA_EN = "Track"
+_ACTION_CAMERA_NOTE_EN = "accelerate track"
+
+TRANSITION_LIBRARY_EN: Dict[str, List[str]] = {
+    "Occlusion": [
+        "mirror swap transition", "snow cover transition", "black frame cut",
+        "letter reveal transition", "ripple transition", "curtain sweep transition",
+        "fog swallow transition", "glass fog transition", "flame spread transition",
+        "object flash transition", "hand cover transition", "door frame transition",
+        "map unfold transition", "photo lead transition", "rain curtain transition",
+        "petal fall transition", "page flip transition", "mask cover transition",
+    ],
+    "Camera Move": [
+        "dive shot transition", "whip pan transition", "camera drop transition",
+        "orbit transition", "side pass transition", "crane up transition",
+        "camera pull transition", "pierce through transition", "camera rise transition",
+        "focus push transition", "rotating camera transition", "wide reveal transition",
+        "closing-in transition", "run-through transition",
+    ],
+    "Action Match": [
+        "turn back match transition", "sword draw transition", "blade link transition",
+        "jump cut transition", "hand raise transition", "eye open transition",
+        "rush through transition", "crouch stand transition",
+    ],
+    "Light & Mood": [
+        "moonlight wash transition", "thunder flash transition", "neon flicker transition",
+        "sunlight overexposure transition", "golden glow transition",
+        "candle flame transition", "red fire transition", "light burst transition",
+        "candle sway transition", "cold blue light transition", "flame burn transition",
+        "dawn light transition", "color glow transition",
+    ],
+    "Time & Space": [
+        "season change transition", "time lapse transition", "era shift transition",
+        "memory flashback transition", "year pass transition", "relic witness transition",
+        "city change transition", "day night cycle transition", "object age transition",
+        "memory flash transition", "character transform transition",
+    ],
+    "Space Jump": [
+        "deep sea surge transition", "portal transition", "mirror world transition",
+        "cloud ascent transition", "cave pass transition", "forest to war transition",
+        "painting world transition", "space warp transition",
+    ],
+    "Narrative": [
+        "parallel cut transition", "gaze guide transition", "montage transition",
+        "match cut transition", "long take narrative", "depth of field transition",
+        "sound first transition", "graphic match transition", "motion blur transition",
+        "environment wipe transition", "ending wrap transition",
+    ],
+    "Opening": [
+        "movie reveal opening", "omen arrival opening", "eye awakening opening",
+        "battle echo opening", "rain curtain opening", "broken opening",
+        "gate open opening", "dream warning opening", "back reveal opening",
+        "ashes rebirth opening", "weapon lead opening", "high platform opening",
+    ],
+}
+
+TRANSITION_FORMULAS_EN: List[str] = [
+    "climax burst formula", "character action formula", "dream reality switch formula",
+    "light mood formula", "space passage formula", "foreground wipe formula",
+    "growth progression formula", "prop clue formula", "environment narrative formula",
+    "cinematic universal formula",
+]
+
+# 英文场景词 -> 具体英文转场（顺序即优先级；值必须都在 TRANSITION_LIBRARY_EN）
+_TRANSITION_SCENE_RULES_EN: List[Tuple[str, str]] = [
+    ("portal", "portal transition"), ("teleport", "portal transition"),
+    ("dimension", "portal transition"), ("parallel world", "mirror world transition"),
+    ("illusion", "mirror world transition"), ("mirror", "mirror world transition"),
+    ("flashback", "memory flashback transition"), ("memory", "memory flash transition"),
+    ("memories", "memory flash transition"), ("remember", "memory flash transition"),
+    ("truth", "letter reveal transition"), ("secret", "letter reveal transition"),
+    ("letter", "letter reveal transition"), ("confession", "letter reveal transition"),
+    ("dream", "curtain sweep transition"), ("nightmare", "camera drop transition"),
+    ("climax", "black frame cut"), ("crisis", "black frame cut"),
+    ("danger", "black frame cut"), ("trap", "black frame cut"),
+    ("fight", "whip pan transition"), ("battle", "blade link transition"),
+    ("chase", "run-through transition"), ("escape", "run-through transition"),
+    ("flee", "run-through transition"), ("run away", "run-through transition"),
+    ("city", "environment wipe transition"), ("urban", "neon flicker transition"),
+    ("rebellious", "neon flicker transition"),
+    ("rain", "rain curtain transition"), ("storm", "thunder flash transition"),
+    ("thunder", "thunder flash transition"), ("lightning", "thunder flash transition"),
+    ("love", "petal fall transition"), ("romantic", "petal fall transition"),
+    ("departure", "snow cover transition"), ("farewell", "snow cover transition"),
+    ("winter", "snow cover transition"),
+    ("awakening", "eye open transition"), ("power", "hand raise transition"),
+    ("strength", "hand raise transition"),
+    ("rebirth", "flame spread transition"), ("fire", "flame spread transition"),
+    ("burn", "flame burn transition"), ("explosion", "light burst transition"),
+    ("time", "time lapse transition"), ("years", "season change transition"),
+    ("aging", "year pass transition"),
+    ("war", "map unfold transition"), ("army", "map unfold transition"),
+    ("battlefield", "dive shot transition"),
+    ("underworld", "deep sea surge transition"), ("sea", "deep sea surge transition"),
+    ("ocean", "deep sea surge transition"),
+    ("cave", "cave pass transition"), ("underground", "cave pass transition"),
+    ("identity", "mask cover transition"), ("disguise", "mask cover transition"),
+    ("hidden", "mask cover transition"),
+    ("ending", "ending wrap transition"), ("final", "ending wrap transition"),
+    ("dawn", "dawn light transition"), ("morning", "sunlight overexposure transition"),
+    ("night", "moonlight wash transition"), ("midnight", "moonlight wash transition"),
+    ("suspense", "glass fog transition"), ("psychological", "glass fog transition"),
+]
+
+_HOOK_TRANSITION_EN: Dict[str, str] = {
+    "Suspense": "wide reveal transition",
+    "Twist": "letter reveal transition",
+    "Crisis": "black frame cut",
+    "New Info": "sound first transition",
+}
+
+_EMOTION_KEYWORDS_EN: List[Tuple[str, str]] = [
+    ("angry", "Angry"), ("rage", "Angry"), ("fury", "Angry"), ("clench", "Angry"),
+    ("hate", "Angry"), ("irritated", "Angry"),
+    ("cry", "Sad"), ("tears", "Sad"), ("sad", "Sad"), ("grief", "Sad"),
+    ("hurt", "Sad"), ("heartbroken", "Sad"), ("sob", "Sad"),
+    ("surprised", "Surprised"), ("shock", "Surprised"), ("unexpected", "Surprised"),
+    ("astonished", "Surprised"), ("amazed", "Surprised"),
+    ("afraid", "Afraid"), ("fear", "Afraid"), ("panic", "Afraid"), ("tremble", "Afraid"),
+    ("terrified", "Afraid"), ("scared", "Afraid"),
+    ("smile", "Happy"), ("happy", "Happy"), ("joy", "Happy"), ("excited", "Happy"),
+    ("grin", "Happy"), ("laugh", "Happy"),
+    ("cold", "Indifferent"), ("indifferent", "Indifferent"), ("emotionless", "Indifferent"),
+    ("unmoved", "Indifferent"), ("flat", "Indifferent"),
+    ("nervous", "Tense"), ("tense", "Tense"), ("grip", "Tense"), ("urgent", "Tense"),
+    ("anxious", "Tense"), ("sweat", "Tense"),
+    ("proud", "Proud"), ("smirk", "Proud"), ("arrogant", "Proud"), ("pride", "Proud"),
+    ("focus", "Focused"), ("stare", "Focused"), ("staring", "Focused"),
+    ("concentrate", "Focused"), ("gaze", "Focused"),
+    ("hesitate", "Hesitant"), ("hesitant", "Hesitant"), ("silence", "Hesitant"),
+    ("hesitation", "Hesitant"), ("pause", "Hesitant"),
+]
+
+_HOOK_EMOTION_EN: Dict[str, str] = {
+    "Suspense": "Hesitant",
+    "Twist": "Surprised",
+    "Crisis": "Afraid",
+    "New Info": "Focused",
+}
+
+_PROGRESS_EMOTION_EN: List[Tuple[float, str]] = [
+    (0.00, "Calm"),
+    (0.20, "Focused"),
+    (0.40, "Tense"),
+    (0.60, "Angry"),
+    (0.85, "Surprised"),
+]
+
+_LOW_EMOTIONS_EN = {"Calm", "Indifferent", "Focused", "Hesitant"}
+_HIGH_EMOTIONS_EN = {"Angry", "Afraid", "Surprised", "Sad"}
+_MID_TRANSITION_FALLBACK_EN = "focus push transition"
+
+
+def _clip_en(text: str, max_words: int = 30) -> str:
+    """英文模式截断画面描述到合理长度（按词数，优先在句末标点处截断）。"""
+    text = text.strip()
+    words = text.split()
+    if len(words) <= max_words:
+        return text
+    head = words[:max_words]
+    cut = -1
+    for i in range(len(head) - 1, -1, -1):
+        if head[i].endswith((".", "!", "?")):
+            cut = i
+            break
+    if cut >= 6:
+        return " ".join(head[: cut + 1])
+    return " ".join(head) + "…"
+
+
+def _detect_emotion_en(text: str) -> str:
+    if not text:
+        return "Calm"
+    lower = text.lower()
+    for kw, emo in _EMOTION_KEYWORDS_EN:
+        if re.search(rf"\b{re.escape(kw)}\b", lower):
+            return emo
+    return "Calm"
+
+
+def _is_big_scene_en(text: str) -> bool:
+    lower = text.lower()
+    return any(re.search(rf"\b{re.escape(kw)}\b", lower)
+               for kw in _BIG_SCENE_KEYWORDS_EN)
+
+
+def _has_fast_action_en(text: str) -> bool:
+    lower = text.lower()
+    return any(re.search(rf"\b{re.escape(kw)}\b", lower)
+               for kw in _ACTION_CAMERA_KEYWORDS_EN)
+
+
+def _pick_camera_en(emotion: str, text: str) -> Tuple[str, str]:
+    if _has_fast_action_en(text):
+        return _ACTION_CAMERA_EN, _ACTION_CAMERA_NOTE_EN
+    if _is_big_scene_en(text):
+        return _BIG_SCENE_CAMERA_EN, "environment reveal pull"
+    camera = _EMOTION_CAMERA_EN.get(emotion, "Static")
+    note = _EMOTION_CAMERA_NOTE_EN.get(emotion, "fixed camera")
+    return camera, note
+
+
+def _pick_size_en(emotion: str, text: str) -> str:
+    if _is_big_scene_en(text):
+        return _BIG_SCENE_SIZE_EN
+    return _EMOTION_SIZE_EN.get(emotion, "Medium")
+
+
+def _pick_transition_for_scene_en(scene_text: str) -> str:
+    lower = scene_text.lower()
+    for kw, trans in _TRANSITION_SCENE_RULES_EN:
+        if kw in lower:
+            return trans
+    return TRANSITION_FORMULAS_EN[4]
+
+
+def _pick_hook_transition_en(hook_type: str) -> str:
+    return _HOOK_TRANSITION_EN.get(hook_type, "wide reveal transition")
+
+
+def _progress_emotion_en(pos: float, hook_type: str) -> str:
+    cur = "Calm"
+    for start, emo in _PROGRESS_EMOTION_EN:
+        if pos >= start:
+            cur = emo
+    if pos >= 0.92:
+        cur = _HOOK_EMOTION_EN.get(hook_type, "Hesitant")
+    return cur
+
+
+def _pick_mid_transition_en(text: str, prev_emotion: str,
+                            cur_emotion: str) -> str:
+    if prev_emotion in _LOW_EMOTIONS_EN and cur_emotion in _HIGH_EMOTIONS_EN:
+        chosen = _pick_transition_for_scene_en(text)
+        if chosen == TRANSITION_FORMULAS_EN[4]:
+            return _MID_TRANSITION_FALLBACK_EN
+        return chosen
+    return ""
+
+
+def _dialog_plain_en(dialogue: Optional[str]) -> str:
+    """把「[角色] \"内容\"」转为「角色: \"内容\"」。"""
+    if not dialogue:
+        return ""
+    s = dialogue.strip()
+    m = re.match(r"^\[([^\]]+)\]\s*(\".*?\")$", s)
+    if m:
+        return f"{m.group(1)}: {m.group(2)}"
+    return s
+
+
 # ------------------- 数据类 -------------------
 
 
@@ -558,34 +890,42 @@ def storyboard_episode(ep: es.Episode) -> List[StoryboardShot]:
     base, rem = divmod(ep.target_duration, n)
     durations = [base + (1 if i < rem else 0) for i in range(n)]
 
+    en = getattr(ep, "language", "zh") == "en"
     lines = ep.lines or []
     scenes = ep.scenes or []
     chars = ep.characters or []
-    lead = chars[0].name if chars else "主角"
+    lead = chars[0].name if chars else ("Protagonist" if en else "主角")
     conflict = ep.core_conflict or ""
     hook = ep.episode_hook or ""
-    hook_type = ep.hook_type or "悬念"
+    hook_type = ep.hook_type or ("Suspense" if en else "悬念")
     source = ep.source_text or conflict or ""
+    narrator_name = "Narrator" if en else "旁白"
+
+    # 按语言切句：英文按句点/问号/感叹号；中文按句读标点
+    def split_sents(t: Optional[str]) -> List[str]:
+        if en:
+            return es._split_sentences_lang(t, "en")
+        return _split_sentences(t)
 
     # 叙事单元：尽量用完整素材切句还原（T07 压缩后的 lines 文本也并入）
-    narratives_raw = _split_sentences(source)
+    narratives_raw = split_sents(source)
     if len(narratives_raw) < 2:
-        narratives_raw = _split_sentences(conflict) + _split_sentences(hook)
+        narratives_raw = split_sents(conflict) + split_sents(hook)
     if not narratives_raw:
-        narratives_raw = [conflict or "推进剧情"]
-    narratives: List[Tuple[str, str]] = [(s, "旁白") for s in narratives_raw]
+        narratives_raw = [conflict or ("advance the plot" if en else "推进剧情")]
+    narratives: List[Tuple[str, str]] = [(s, narrator_name) for s in narratives_raw]
     # 台词集合：多行 lines 逐字取（保留讲话人）；单条旁白时若源文本完整
     # 叙事有多句，直接用源文本句子做旁白（逐字保留原文），否则用该旁白切句
     speech_pool: List[Tuple[str, str]] = []  # (文本, 讲话人)
     if len(lines) >= 2:
         speech_pool = [(ln.text, ln.speaker) for ln in lines if ln.text.strip()]
     elif len(lines) == 1:
-        src_sents = _split_sentences(source)
+        src_sents = split_sents(source)
         if len(src_sents) > 1:
             speech_pool = [(s, lines[0].speaker) for s in src_sents]
         else:
             speech_pool = [(s, lines[0].speaker)
-                           for s in (_split_sentences(lines[0].text) or [lines[0].text])]
+                           for s in (split_sents(lines[0].text) or [lines[0].text])]
 
     def item_for(pool: List[Tuple[str, str]], i: int) -> Optional[Tuple[str, str]]:
         if not pool:
@@ -625,9 +965,14 @@ def storyboard_episode(ep: es.Episode) -> List[StoryboardShot]:
         emotion_src = " ".join(filter(None, [spoken, narrative]))
         if not emotion_src:
             emotion_src = " ".join(filter(None, [conflict, scene_text]))
-        emotion = _detect_emotion(emotion_src)
-        if emotion == "平静":
-            emotion = _progress_emotion((i + 1) / n, hook_type)
+        if en:
+            emotion = _detect_emotion_en(emotion_src)
+            if emotion == "Calm":
+                emotion = _progress_emotion_en((i + 1) / n, hook_type)
+        else:
+            emotion = _detect_emotion(emotion_src)
+            if emotion == "平静":
+                emotion = _progress_emotion((i + 1) / n, hook_type)
 
         # 转场：首镜开篇 / 换场景 / 情绪拐点（仅一次）/ 集末钩子
         transition = ""
@@ -635,16 +980,21 @@ def storyboard_episode(ep: es.Episode) -> List[StoryboardShot]:
             scene and prev_scene_obj and (scene.location != prev_scene_obj.location)
         )
         if i == 0:
-            transition = TRANSITION_LIBRARY["开篇式"][0]  # 电影现身开篇
+            trans_lib = TRANSITION_LIBRARY_EN if en else TRANSITION_LIBRARY
+            trans_pick = _pick_transition_for_scene_en if en else _pick_transition_for_scene
+            trans_mid = _pick_mid_transition_en if en else _pick_mid_transition
+            trans_hook = _pick_hook_transition_en if en else _pick_hook_transition
+            transition = trans_lib["Opening" if en else "开篇式"][0]
         elif scene_changed:
-            transition = _pick_transition_for_scene(
+            transition = ( _pick_transition_for_scene_en if en
+                           else _pick_transition_for_scene )(
                 " ".join(filter(None, [scene_text, narrative, conflict, hook]))
             )
         elif (
             not scene_changed and not mid_transition_done
             and i >= 2
         ):
-            mid = _pick_mid_transition(
+            mid = ( _pick_mid_transition_en if en else _pick_mid_transition )(
                 " ".join(filter(None, [narrative, conflict, scene_text])),
                 prev_emotion, emotion,
             )
@@ -652,46 +1002,80 @@ def storyboard_episode(ep: es.Episode) -> List[StoryboardShot]:
                 transition = mid
                 mid_transition_done = True
         if i == n - 1 and not transition:
-            transition = _pick_hook_transition(hook_type)
+            transition = ( _pick_hook_transition_en if en
+                           else _pick_hook_transition )(hook_type)
 
         # 景别/运镜：冲突与情绪拐点镜用近景/特写，转场镜用远景（M0 规则 7）
         # 只按本镜叙事文本判断，避免 scene_text 整段出现的动作词/场面词
         # 污染全集（与情绪判断同一套本镜优先、无文本才兜底策略）
         text_for_shot = emotion_src
-        shot_size = _pick_size(emotion, text_for_shot)
-        camera, camera_note = _pick_camera(emotion, text_for_shot)
+        if en:
+            shot_size = _pick_size_en(emotion, text_for_shot)
+            camera, camera_note = _pick_camera_en(emotion, text_for_shot)
+        else:
+            shot_size = _pick_size(emotion, text_for_shot)
+            camera, camera_note = _pick_camera(emotion, text_for_shot)
         if transition:
-            shot_size = "远景"
+            shot_size = "Wide" if en else "远景"
 
-        expression, tone = es.EMOTION_DICT.get(emotion, es.EMOTION_DICT["平静"])
+        if en:
+            expression, tone = es.EMOTION_DICT_EN.get(
+                emotion, es.EMOTION_DICT_EN["Calm"])
+        else:
+            expression, tone = es.EMOTION_DICT.get(emotion, es.EMOTION_DICT["平静"])
 
-        actor_text = f"{speaker}" if speaker != "旁白" else "旁白视角"
+        actor_text = f"{speaker}" if speaker != narrator_name else (
+            "Narrator's view" if en else "旁白视角")
         if spoken:
-            visual = (
-                f"{actor_text}说出\"{spoken}\"，"
-                f"镜头以{camera_note}呈现，位置：{scene.location if scene else '既定场景'}"
-            )
-        elif emotion != "平静":
-            visual = (
-                f"{actor_text}{narrative or '推进剧情'}，"
-                f"情绪{emotion}，以{camera_note}呈现"
+            if en:
+                visual = (
+                    f"{actor_text} says \"{spoken}\", presented with "
+                    f"{camera_note} at {scene.location if scene else 'the set scene'}"
+                )
+            else:
+                visual = (
+                    f"{actor_text}说出\"{spoken}\"，"
+                    f"镜头以{camera_note}呈现，位置：{scene.location if scene else '既定场景'}"
+                )
+        elif emotion != ("Calm" if en else "平静"):
+            if en:
+                visual = (
+                    f"{actor_text} {narrative or 'advances the plot'}, with "
+                    f"{emotion} emotion, presented with {camera_note}"
+                )
+            else:
+                visual = (
+                    f"{actor_text}{narrative or '推进剧情'}，"
+                    f"情绪{emotion}，以{camera_note}呈现"
+                )
+        else:
+            if en:
+                visual = (
+                    f"{actor_text}: {narrative or scene_text or 'advances the plot'}, "
+                    f"presented with {camera_note}"
+                )
+            else:
+                visual = (
+                    f"{actor_text}：{narrative or scene_text or '推进剧情'}，"
+                    f"镜头以{camera_note}呈现"
+                )
+        if en:
+            dialogue = (
+                f"[{speaker}] \"{spoken}\"" if spoken and speaker != narrator_name
+                else (f"[Narrator] \"{spoken}\"" if spoken else "")
             )
         else:
-            visual = (
-                f"{actor_text}：{narrative or scene_text or '推进剧情'}，"
-                f"镜头以{camera_note}呈现"
+            dialogue = (
+                f"【{speaker}】\"{spoken}\"" if spoken and speaker != "旁白"
+                else (f"【旁白】\"{spoken}\"" if spoken else "")
             )
-        dialogue = (
-            f"【{speaker}】\"{spoken}\"" if spoken and speaker != "旁白"
-            else (f"【旁白】\"{spoken}\"" if spoken else "")
-        )
 
         shots.append(
             StoryboardShot(
                 shot=i + 1,
                 shot_size=shot_size,
                 camera=camera,
-                visual=_clip(visual),
+                visual=(_clip_en(visual) if en else _clip(visual)),
                 dialogue=dialogue if dialogue else None,
                 character=speaker,
                 emotion=emotion,
@@ -759,27 +1143,51 @@ def render_storyboard_text(
     - 台词为空时省略台词行，转场为空时省略转场行；
     - 首行为输入类型说明，命中红线时保留警示行。
     """
+    en = getattr(plan, "language", "zh") == "en"
     out: List[str] = []
-    out.append(f"剧本分镜稿（输入类型：{plan.input_type_label}）")
+    if en:
+        out.append(f"Storyboard script (input type: {plan.input_type_label})")
+    else:
+        out.append(f"剧本分镜稿（输入类型：{plan.input_type_label}）")
     if plan.sensitive_hits:
-        out.append(f"注意：命中红线类别 {'、'.join(plan.sensitive_hits)}，请人工确认后继续")
+        if en:
+            out.append("Note: sensitive categories hit "
+                       f"{'、'.join(plan.sensitive_hits)}, please review first")
+        else:
+            out.append(f"注意：命中红线类别 {'、'.join(plan.sensitive_hits)}，请人工确认后继续")
 
     for ep in plan.episodes:
         out.append("")
-        out.append(f"第 {ep.episode} 集｜目标时长 {ep.target_duration} 秒")
-        out.append(f"核心冲突：{ep.core_conflict}")
-        out.append(f"集末钩子：{ep.episode_hook}")
+        if en:
+            out.append(f"Episode {ep.episode}｜Target {ep.target_duration} seconds")
+            out.append(f"Core conflict: {ep.core_conflict}")
+            out.append(f"Episode hook: {ep.episode_hook}")
+        else:
+            out.append(f"第 {ep.episode} 集｜目标时长 {ep.target_duration} 秒")
+            out.append(f"核心冲突：{ep.core_conflict}")
+            out.append(f"集末钩子：{ep.episode_hook}")
         shots: List[StoryboardShot] = ep.shots  # type: ignore[assignment]
         for s in shots:
-            block = [f"镜{s.shot}｜{s.shot_size}·{s.camera_note}（{s.duration}秒）"]
-            block.append(f"画面：{s.visual}")
-            if s.dialogue:
-                block.append(f"台词：{_dialog_plain(s.dialogue)}")
-            block.append(f"情绪：{s.emotion}")
-            block.append(f"表情：{s.expression}")
-            block.append(f"音调：{s.tone}")
-            if s.transition:
-                block.append(f"转场：{s.transition}")
+            if en:
+                block = [f"Shot{s.shot}｜{s.shot_size}·{s.camera_note} ({s.duration}s)"]
+                block.append(f"Visual: {s.visual}")
+                if s.dialogue:
+                    block.append(f"Dialogue: {_dialog_plain_en(s.dialogue)}")
+                block.append(f"Emotion: {s.emotion}")
+                block.append(f"Expression: {s.expression}")
+                block.append(f"Tone: {s.tone}")
+                if s.transition:
+                    block.append(f"Transition: {s.transition}")
+            else:
+                block = [f"镜{s.shot}｜{s.shot_size}·{s.camera_note}（{s.duration}秒）"]
+                block.append(f"画面：{s.visual}")
+                if s.dialogue:
+                    block.append(f"台词：{_dialog_plain(s.dialogue)}")
+                block.append(f"情绪：{s.emotion}")
+                block.append(f"表情：{s.expression}")
+                block.append(f"音调：{s.tone}")
+                if s.transition:
+                    block.append(f"转场：{s.transition}")
             if break_by_shot:
                 out.append("")
             out.extend(block)
@@ -792,33 +1200,63 @@ def render_storyboard_text(
 
 def render_storyboard_markdown(plan: es.EpisodePlan) -> str:
     """输出含运镜术语与转场列的分镜表（Markdown）。"""
+    en = getattr(plan, "language", "zh") == "en"
     out: List[str] = []
-    out.append(f"# 分集剧本（输入类型：{plan.input_type_label}）")
+    if en:
+        out.append(f"# Episode Scripts (input type: {plan.input_type_label})")
+    else:
+        out.append(f"# 分集剧本（输入类型：{plan.input_type_label}）")
     if plan.sensitive_hits:
-        out.append(f"> ⚠ 命中红线类别：{'、'.join(plan.sensitive_hits)}（请人工确认后继续）")
+        if en:
+            out.append("> ⚠ Sensitive categories hit: "
+                       f"{'、'.join(plan.sensitive_hits)} (please review first)")
+        else:
+            out.append(f"> ⚠ 命中红线类别：{'、'.join(plan.sensitive_hits)}（请人工确认后继续）")
 
     for ep in plan.episodes:
         out.append("")
-        out.append(f"## 第 {ep.episode} 集（目标时长 {ep.target_duration} 秒）")
-        out.append(f"- 核心冲突：{ep.core_conflict}")
-        out.append(f"- 集末钩子（{ep.hook_type}）：{ep.episode_hook}")
-        out.append("")
-        out.append("### 分镜表")
-        out.append(
-            "| 镜号 | 景别 | 运镜 | 运镜术语 | 画面内容 | 台词/旁白 | "
-            "角色 | 情绪 | 表情 | 音调 | 时长 | 转场 |"
-        )
-        out.append(
-            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
-        )
+        if en:
+            out.append(f"## Episode {ep.episode} (target {ep.target_duration} seconds)")
+            out.append(f"- Core conflict: {ep.core_conflict}")
+            out.append(f"- Episode hook ({ep.hook_type}): {ep.episode_hook}")
+            out.append("")
+            out.append("### Storyboard table")
+            out.append(
+                "| Shot | Size | Camera | Camera note | Visual | Dialogue/Narration "
+                "| Character | Emotion | Expression | Tone | Duration | Transition |"
+            )
+            out.append(
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+            )
+        else:
+            out.append(f"## 第 {ep.episode} 集（目标时长 {ep.target_duration} 秒）")
+            out.append(f"- 核心冲突：{ep.core_conflict}")
+            out.append(f"- 集末钩子（{ep.hook_type}）：{ep.episode_hook}")
+            out.append("")
+            out.append("### 分镜表")
+            out.append(
+                "| 镜号 | 景别 | 运镜 | 运镜术语 | 画面内容 | 台词/旁白 | "
+                "角色 | 情绪 | 表情 | 音调 | 时长 | 转场 |"
+            )
+            out.append(
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+            )
         shots: List[StoryboardShot] = ep.shots  # type: ignore[assignment]
         for s in shots:
-            dialogue = s.dialogue if s.dialogue else "（无）"
-            out.append(
-                f"| {s.shot} | {s.shot_size} | {s.camera} | {s.camera_note} "
-                f"| {s.visual} | {dialogue} | {s.character} | {s.emotion} "
-                f"| {s.expression} | {s.tone} | {s.duration} | {s.transition or '—'} |"
-            )
+            if en:
+                dialogue = s.dialogue if s.dialogue else "(none)"
+                out.append(
+                    f"| {s.shot} | {s.shot_size} | {s.camera} | {s.camera_note} "
+                    f"| {s.visual} | {dialogue} | {s.character} | {s.emotion} "
+                    f"| {s.expression} | {s.tone} | {s.duration} | {s.transition or '—'} |"
+                )
+            else:
+                dialogue = s.dialogue if s.dialogue else "（无）"
+                out.append(
+                    f"| {s.shot} | {s.shot_size} | {s.camera} | {s.camera_note} "
+                    f"| {s.visual} | {dialogue} | {s.character} | {s.emotion} "
+                    f"| {s.expression} | {s.tone} | {s.duration} | {s.transition or '—'} |"
+                )
     return "\n".join(out)
 
 
@@ -841,16 +1279,23 @@ def validate_storyboard(plan: es.EpisodePlan) -> List[str]:
     if not plan.episodes:
         return ["分镜计划为空"]
 
+    en = getattr(plan, "language", "zh") == "en"
     all_notes: set = set()
-    for fam in CAMERA_LIBRARY.values():
+    camera_lib = CAMERA_LIBRARY_EN if en else CAMERA_LIBRARY
+    trans_lib = TRANSITION_LIBRARY_EN if en else TRANSITION_LIBRARY
+    formulas = TRANSITION_FORMULAS_EN if en else TRANSITION_FORMULAS
+    sizes = es.SHOT_SIZES_EN if en else es.SHOT_SIZES
+    cams = es.CAMERAS_EN if en else es.CAMERAS
+    emotions = es.EMOTION_DICT_EN if en else es.EMOTION_DICT
+    for fam in camera_lib.values():
         all_notes.update(fam)
     all_transitions: set = set()
-    for fam in TRANSITION_LIBRARY.values():
+    for fam in trans_lib.values():
         all_transitions.update(fam)
-    all_transitions.update(TRANSITION_FORMULAS)
+    all_transitions.update(formulas)
 
     for ep in plan.episodes:
-        tag = f"第{ep.episode}集"
+        tag = f"Episode {ep.episode}" if en else f"第{ep.episode}集"
         if not ep.shots:
             problems.append(f"{tag}：分镜为空")
             continue
@@ -859,18 +1304,17 @@ def validate_storyboard(plan: es.EpisodePlan) -> List[str]:
             problems.append(f"{tag}：分镜总时长 {total} != 目标时长")
         shots: List[StoryboardShot] = ep.shots  # type: ignore[assignment]
         for i, s in enumerate(shots):
-            if s.shot_size not in es.SHOT_SIZES:
+            if s.shot_size not in sizes:
                 problems.append(f"{tag}：景别 {s.shot_size} 不在枚举内")
-            if s.camera not in es.CAMERAS:
+            if s.camera not in cams:
                 problems.append(f"{tag}：运镜 {s.camera} 不在枚举内")
             if not 2 <= s.duration <= 5:
                 problems.append(f"{tag}：镜时长 {s.duration} 超 2--5 秒")
-            if s.emotion not in es.EMOTION_DICT:
+            if s.emotion not in emotions:
                 problems.append(f"{tag}：情绪 {s.emotion} 不在词典内")
-            expected = _EMOTION_CAMERA_NOTE.get(s.emotion) or "固定机位"
             if s.camera_note not in all_notes:
                 problems.append(f"{tag}：运镜术语 {s.camera_note} 不在术语库")
-            if s.camera_note not in CAMERA_LIBRARY.get(s.camera, []):
+            if s.camera_note not in camera_lib.get(s.camera, []):
                 problems.append(
                     f"{tag}：运镜术语 {s.camera_note} 与运镜 {s.camera} 不一致"
                 )

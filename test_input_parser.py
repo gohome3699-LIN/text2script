@@ -259,5 +259,41 @@ class TestParseInput(unittest.TestCase):
         self.assertGreater(result.cleaned_length, 0)
 
 
+class TestLanguageDetection(unittest.TestCase):
+    """输入语言检测：中文→zh、英文→en（v1.2.0 语言匹配核心）。"""
+
+    def test_detect_chinese(self):
+        self.assertEqual(ip.detect_language("外卖小哥获得读心术"), "zh")
+
+    def test_detect_english(self):
+        self.assertEqual(ip.detect_language("A rider gains telepathy"), "en")
+
+    def test_detect_english_with_punctuation(self):
+        self.assertEqual(
+            ip.detect_language('He said, "I will save you!" Wait, really?'),
+            "en",
+        )
+
+    def test_detect_empty_defaults_zh(self):
+        self.assertEqual(ip.detect_language(""), "zh")
+        self.assertEqual(ip.detect_language("   "), "zh")
+
+    def test_parse_input_english_sets_language(self):
+        text = (
+            "A delivery rider named Jack gets a strange power: he can read minds. "
+            "Jack follows the gangsters to a warehouse and confronts them alone."
+        )
+        result = ip.parse_input(text)
+        self.assertEqual(result.language, "en")
+        # 英文输入 -> 英文标签（Synopsis / Novel excerpt 等）
+        self.assertNotIn("CJK", result.input_type_label)
+        self.assertTrue(result.input_type_label.isascii())
+
+    def test_parse_input_chinese_sets_language(self):
+        result = ip.parse_input("外卖小哥获得读心术，送餐途中一次次救下陌生人。")
+        self.assertEqual(result.language, "zh")
+        self.assertFalse(result.input_type_label.isascii())
+
+
 if __name__ == "__main__":
     unittest.main()

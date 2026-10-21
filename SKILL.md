@@ -94,7 +94,8 @@ python <skill_dir>/web/app.py            # 默认 http://127.0.0.1:5000
 - **MUST** 长文本走分段：清洗后超过 2000 字自动按段切分，stderr 会提示分段数，卡片不做额外截断处理
 - **MUST** text 输出按分镜节点分段：输入超过 800 字时以分镜节点（每镜）为段落单位，空行分隔，便于 AI 工具逐镜粘贴
 - **MUST** 空输入兜底：无 `--text/--file`、空文本、文件不存在时给出明确错误并停止，不产出空文档
-- **MUST** 保留中文输出：命令行与网页版生成的内容使用简体中文（文件名/路径除外）；网页版**界面**三语（简/繁/EN）仅切换 UI 文案，不得翻译用户输入或生成的分镜稿
+- **MUST** 输入语言匹配输出（v1.2.0）：自动检测输入主要语言——中文输入 → 中文输出，英文输入 → 英文输出；不得把英文输入强行输出成中文，也不得把中文输入译成英文。网页版**界面**三语（简/繁/EN）仅切换 UI 文案，不翻译用户输入或生成内容
+- **MUST** text 输出按语言渲染：英文输入时 `--format text` 输出英文分镜稿（`Storyboard script` / `Episode N` / `Narrator` 等英文框架），仍保持纯文字档无表格装饰符号
 
 ---
 
@@ -117,8 +118,8 @@ python <skill_dir>/web/app.py            # 默认 http://127.0.0.1:5000
 │   ├── requirements.txt    ← flask、python-docx
 │   ├── templates/index.html
 │   ├── static/style.css
-│   ├── static/app.js       ← 前端 + i18n 字典（简体/繁体/英文）
-│   └── test_webapp.py      ← 网页版自测（11 项）
+│   ├── static/app.js       ← 前端 + i18n 字典（简体/繁体/英文）+ 输出语言标签
+│   └── test_webapp.py      ← 网页版自测（12 项）
 └── README.md               ← 使用说明
 ```
 

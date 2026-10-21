@@ -295,6 +295,51 @@ class TestJsonMarkdown(unittest.TestCase):
         return build_storyboard_plan(ONE_LINER, target_duration=60)
 
 
+EN_TEXT = (
+    "A delivery rider named Jack gets a strange power: he can read minds. "
+    "One day, an old woman asks him for help. Her grandson has been "
+    "kidnapped by gangsters. Jack hesitates at first, but he remembers "
+    "his promise to protect the weak. He follows the gangsters to a "
+    "warehouse and confronts them alone."
+)
+
+
+class TestEnglishStoryboard(unittest.TestCase):
+    """英文输入 -> 英文分镜、渲染与自检（v1.2.0 语言匹配核心）。"""
+
+    def _plan(self):
+        return build_storyboard_plan(EN_TEXT, target_duration=60)
+
+    def test_plan_language_is_en(self):
+        self.assertEqual(self._plan().language, "en")
+
+    def test_storyboard_english_enums(self):
+        plan = self._plan()
+        ep = plan.episodes[0]
+        self.assertTrue(ep.shots)
+        for s in ep.shots:
+            self.assertIn(s.shot_size, es.SHOT_SIZES_EN)
+            self.assertIn(s.camera, es.CAMERAS_EN)
+            self.assertIn(s.emotion, es.EMOTION_DICT_EN)
+
+    def test_markdown_english_frames(self):
+        md = render_storyboard_markdown(self._plan())
+        self.assertIn("## Episode 1", md)
+        self.assertIn("Storyboard table", md)
+        self.assertIn("Shot", md)
+        self.assertNotIn("分镜表", md)
+
+    def test_text_render_english_plain(self):
+        txt = render_storyboard_text(self._plan(), break_by_shot=False)
+        self.assertIn("Storyboard script", txt)
+        self.assertIn("Episode 1", txt)
+        self.assertNotIn("| 镜号", txt)
+        self.assertNotIn("【", txt)
+
+    def test_validate_english_pass(self):
+        self.assertEqual(validate_storyboard(self._plan()), [])
+
+
 class TestCliStdout(unittest.TestCase):
     """CLI 输出纯净：stdout 只有 markdown/json，信息行走 stderr。"""
 

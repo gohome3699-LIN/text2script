@@ -32,7 +32,7 @@ T11-T15 分镜拆解。
     .docx 需要 python-docx：python -m pip install python-docx。
     """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 import argparse
 import os

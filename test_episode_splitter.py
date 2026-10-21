@@ -329,5 +329,62 @@ class TestRendering(unittest.TestCase):
         self.assertTrue(data["episodes"][0]["episode_hook"])
 
 
+EN_TEXT = (
+    "A delivery rider named Jack gets a strange power: he can read minds. "
+    'One day, an old woman asks him for help: "Please find my grandson!" '
+    "Her grandson has been kidnapped by gangsters. "
+    "Jack hesitates at first, but he remembers his promise to protect the weak. "
+    "He follows the gangsters to a warehouse and confronts them alone. "
+    "At the end, Jack saves the boy, but the gang leader swears revenge."
+)
+
+
+class TestEnglishMode(unittest.TestCase):
+    """英文输入 -> 英文拆分与渲染（v1.2.0 语言匹配核心）。"""
+
+    def setUp(self):
+        self.plan = es.split_episodes_from_text(EN_TEXT)
+
+    def test_plan_language_is_en(self):
+        self.assertEqual(self.plan.language, "en")
+
+    def test_episode_language_is_en(self):
+        self.assertTrue(self.plan.episodes)
+        for ep in self.plan.episodes:
+            self.assertEqual(ep.language, "en")
+
+    def test_characters_in_english_enum(self):
+        for ep in self.plan.episodes:
+            for c in ep.characters:
+                self.assertIn(c.role, es.CHARACTER_ROLES_EN)
+
+    def test_shots_english_enums(self):
+        shots = self.plan.episodes[0].shots
+        self.assertTrue(shots)
+        for s in shots:
+            self.assertIn(s.shot_size, es.SHOT_SIZES_EN)
+            self.assertIn(s.camera, es.CAMERAS_EN)
+
+    def test_conflict_and_hook_english(self):
+        ep = self.plan.episodes[0]
+        self.assertTrue(ep.core_conflict.isascii())
+        self.assertTrue(ep.episode_hook.isascii())
+
+    def test_markdown_english_frames(self):
+        md = es.render_markdown(self.plan)
+        self.assertIn("## Episode 1", md)
+        self.assertIn("Core conflict", md)
+        self.assertIn("Episode hook", md)
+        self.assertNotIn("第 1 集", md)
+
+    def test_lines_narrator_or_names(self):
+        ep = self.plan.episodes[0]
+        self.assertTrue(ep.lines)
+        valid = {"Narrator"} | {c.name for c in ep.characters}
+        for ln in ep.lines:
+            self.assertIn(ln.speaker, valid)
+            self.assertTrue(ln.text.isascii())
+
+
 if __name__ == "__main__":
     unittest.main()

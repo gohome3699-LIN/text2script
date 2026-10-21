@@ -19,6 +19,10 @@ SUMMARY_MAX = 800
 CHUNK_SIZE = 2000        # 无章节标记时按约 2000 字切块
 CHUNK_OVERLAP = 100      # 块间保留 100 字重叠以衔接上下文
 
+# 英文输入的等价阈值：英文以词计，字符数天然比中文长，按字符放宽
+ONE_LINE_MAX_EN = 120    # 一句话创意：<=120 字符且无段落结构
+SUMMARY_MAX_EN = 1600    # 故事梗概：120~1600 字符且有情节线
+
 # ------------------- 输入类型 -------------------
 
 TYPE_ONE_LINE = "one_line"
@@ -33,11 +37,25 @@ INPUT_TYPE_LABELS = {
     TYPE_OUTLINE: "大纲/分卷",
 }
 
+# 英文输入类型标签（输入英文 -> 输出英文时使用）
+INPUT_TYPE_LABELS_EN = {
+    TYPE_ONE_LINE: "One-line idea",
+    TYPE_SUMMARY: "Synopsis",
+    TYPE_EXCERPT: "Novel excerpt",
+    TYPE_OUTLINE: "Outline / volumes",
+}
+
 # ------------------- 正则 -------------------
 
 # 章节标题：行首的「第X卷/章/回」，支持中文数字与阿拉伯数字
 CHAPTER_PATTERN = re.compile(
     r"^第[零一二三四五六七八九十百千万\d]+[卷章回][^\n]*", re.MULTILINE
+)
+
+# 英文章节标题：行首的 Chapter/Part/Volume/Book + 数字，可带标题
+CHAPTER_PATTERN_EN = re.compile(
+    r"^\s*(?:chapter|part|volume|book)\s+[0-9ivxlcdm]+[^\n]*",
+    re.IGNORECASE | re.MULTILINE,
 )
 
 # 对话段落：成对中文引号或英文引号包裹的短句
@@ -58,6 +76,15 @@ NOISE_LINE_PATTERNS = [
         re.IGNORECASE,
     ),
 ]
+
+# 英文噪音行：只保留与语言无关的页码等，不放中文水印词，避免误伤英文正文
+NOISE_LINE_PATTERNS_EN = [
+    re.compile(r"^\s*[-—]*\s*\d+\s*[-—]*\s*$"),
+]
+
+# 语言检测：CJK 汉字与 ASCII 字母的字符集
+_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+_ASCII_LETTER_RE = re.compile(r"[A-Za-z]")
 
 # 标点统一映射（英文 -> 中文）
 _PUNCT_MAP = {
@@ -99,19 +126,41 @@ class ParseResult:
     cleaned_length: int = 0
     chunk_count: int = 0
     rendered: List[str] = field(default_factory=list)  # 注入模板后的提示词列表
+    language: str = "zh"            # 输入语言：zh（中文）/ en（英文）
+
+
+# ------------------- 语言检测 -------------------
+
+
+def detect_language(text: str) -> str:
+    """检测输入文本的主要语言：中文 -> "zh"，英文 -> "en"。
+
+    统计 CJK 汉字与 ASCII 字母的数量（忽略空白与标点），以数量多者为准；
+    无法判断（空文本 / 数量相等）时默认 "zh"，保证既有中文行为不变。
+    """
+    cjk = len(_CJK_RE.findall(text or ""))
+    ascii_letters = len(_ASCII_LETTER_RE.findall(text or ""))
+    if ascii_letters > cjk:
+        return "en"
+    return "zh"
 
 
 # ------------------- 清洗 -------------------
 
 
-def _is_noise_line(line: str) -> bool:
-    """判断是否为可安全删除的噪音行（封面/版权/目录/页码/网文水印）。"""
+def _is_noise_line(line: str, patterns=None) -> bool:
+    """判断是否为可安全删除的噪音行（封面/版权/目录/页码/网文水印）。
+
+    patterns 为空时使用中文噪音模式；英文模式由调用方传入噪音模式列表。
+    """
+    if patterns is None:
+        patterns = NOISE_LINE_PATTERNS
     s = line.strip()
     if not s:
         return False
     if len(s) > 40:
         return False  # 长行视为正文，不删
-    return any(p.search(s) for p in NOISE_LINE_PATTERNS)
+    return any(p.search(s) for p in patterns)
 
 
 def _drop_toc(text: str) -> str:
@@ -185,19 +234,28 @@ def unify_punctuation(s: str) -> str:
     return "".join(out)
 
 
-def clean_text(text: str) -> str:
-    """清洗输入文本：删目录区与噪音行、去全角空格、统一标点、折叠空行。"""
+def clean_text(text: str, language: str = "zh") -> str:
+    """清洗输入文本：删目录区与噪音行、去全角空格、统一标点、折叠空行。
+
+    language="en" 时保留英文标点（不做英文->中文标点映射），
+    噪音行只按英文模式过滤，避免破坏英文正文。
+    """
     if not text:
         return ""
 
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = _drop_toc(text)
 
+    noise_patterns = NOISE_LINE_PATTERNS_EN if language == "en" \
+        else NOISE_LINE_PATTERNS
     kept: List[str] = []
     for line in text.split("\n"):
-        if _is_noise_line(line):
+        if _is_noise_line(line, noise_patterns):
             continue
-        kept.append(unify_punctuation(line.rstrip()))
+        if language == "en":
+            kept.append(line.rstrip())
+        else:
+            kept.append(unify_punctuation(line.rstrip()))
 
     joined = "\n".join(kept)
     # 折叠连续空行（最多保留一个）
@@ -215,23 +273,28 @@ def _has_dialogue(text: str) -> bool:
     return bool(DIALOG_PATTERN.search(text))
 
 
-def detect_input_type(text: str) -> str:
+def detect_input_type(text: str, language: str = "zh") -> str:
     """识别输入类型：大纲/分卷 > 一句话创意 > 小说片段 > 故事梗概。
 
     判定依据 M0-5：一句话<=60字且无段落结构；梗概60~800字有情节线；
     小说片段>800字或含对话段落；大纲含「第X卷/章」标题。
+    language="en" 时按英文等价阈值与英文章节标题判定。
     """
     clean = text.strip()
     if not clean:
         raise ValueError("输入为空，请提供故事素材")
 
-    if CHAPTER_PATTERN.search(clean):
+    chapter_pattern = CHAPTER_PATTERN_EN if language == "en" else CHAPTER_PATTERN
+    if chapter_pattern.search(clean):
         return TYPE_OUTLINE
 
-    if len(clean) <= ONE_LINE_MAX and "\n" not in clean:
+    one_line_max = ONE_LINE_MAX_EN if language == "en" else ONE_LINE_MAX
+    summary_max = SUMMARY_MAX_EN if language == "en" else SUMMARY_MAX
+
+    if len(clean) <= one_line_max and "\n" not in clean:
         return TYPE_ONE_LINE
 
-    if len(clean) > SUMMARY_MAX or _has_dialogue(clean):
+    if len(clean) > summary_max or _has_dialogue(clean):
         return TYPE_EXCERPT
 
     return TYPE_SUMMARY
@@ -245,9 +308,13 @@ def needs_expansion(input_type: str) -> bool:
 # ------------------- 分段 -------------------
 
 
-def split_by_chapter(text: str) -> List[str]:
-    """按章节标题切分文本；无标题时返回空列表。"""
-    matches = list(CHAPTER_PATTERN.finditer(text))
+def split_by_chapter(text: str, language: str = "zh") -> List[str]:
+    """按章节标题切分文本；无标题时返回空列表。
+
+    language="en" 时按英文章节标题（Chapter/Part/Volume/Book）切分。
+    """
+    pattern = CHAPTER_PATTERN_EN if language == "en" else CHAPTER_PATTERN
+    matches = list(pattern.finditer(text))
     if not matches:
         return []
 
@@ -265,8 +332,13 @@ def split_by_chapter(text: str) -> List[str]:
     return [c for c in chunks if c]
 
 
-def _chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
-    """按约 chunk_size 切块，块间保留 overlap 字重叠；尽量在句号/段落边界切。"""
+def _chunk_text(
+    text: str, chunk_size: int, overlap: int, language: str = "zh"
+) -> List[str]:
+    """按约 chunk_size 切块，块间保留 overlap 字重叠；尽量在句子边界切。
+
+    language="en" 时按英文句读（. ! ? ; 后跟空格）切块，避免在单词中间切断。
+    """
     chunks: List[str] = []
     start = 0
     n = len(text)
@@ -277,13 +349,25 @@ def _chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
         end = min(start + chunk_size, n)
         if end < n:
             window = text[start:end]
-            cut = max(
-                window.rfind("\n\n"),
-                window.rfind("。"),
-                window.rfind("！"),
-                window.rfind("？"),
-                window.rfind("；"),
-            )
+            if language == "en":
+                cut = max(
+                    window.rfind("\n\n"),
+                    window.rfind(". "),
+                    window.rfind("! "),
+                    window.rfind("? "),
+                    window.rfind("; "),
+                    window.rfind(".\n"),
+                    window.rfind("!\n"),
+                    window.rfind("?\n"),
+                )
+            else:
+                cut = max(
+                    window.rfind("\n\n"),
+                    window.rfind("。"),
+                    window.rfind("！"),
+                    window.rfind("？"),
+                    window.rfind("；"),
+                )
             if cut > chunk_size * 0.5:
                 end = start + cut + 1
         piece = text[start:end].strip()
@@ -297,24 +381,27 @@ def _chunk_text(text: str, chunk_size: int, overlap: int) -> List[str]:
 
 
 def split_long_text(
-    text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP
+    text: str,
+    chunk_size: int = CHUNK_SIZE,
+    overlap: int = CHUNK_OVERLAP,
+    language: str = "zh",
 ) -> List[str]:
     """超长文本分段：优先按章节标记切分；无章节时按约 2000 字切块并保留 100 字重叠。"""
     text = text.strip()
     if not text:
         return []
 
-    chapters = split_by_chapter(text)
+    chapters = split_by_chapter(text, language)
     if chapters:
         result: List[str] = []
         for ch in chapters:
             if len(ch) <= chunk_size:
                 result.append(ch)
             else:
-                result.extend(_chunk_text(ch, chunk_size, overlap))
+                result.extend(_chunk_text(ch, chunk_size, overlap, language))
         return result
 
-    return _chunk_text(text, chunk_size, overlap)
+    return _chunk_text(text, chunk_size, overlap, language)
 
 
 # ------------------- 敏感拦截（不删除，仅提示确认） -------------------
@@ -349,16 +436,24 @@ def parse_input(
     template: Optional[str] = None,
     chunk_size: int = CHUNK_SIZE,
     overlap: int = CHUNK_OVERLAP,
+    language: Optional[str] = None,
 ) -> ParseResult:
-    """输入解析主流程：清洗 -> 类型识别 -> 扩写判断 -> 分段 -> 敏感检查 -> 模板注入。"""
-    cleaned = clean_text(raw_text)
-    input_type = detect_input_type(cleaned)
-    chunks = split_long_text(cleaned, chunk_size, overlap)
+    """输入解析主流程：清洗 -> 类型识别 -> 扩写判断 -> 分段 -> 敏感检查 -> 模板注入。
+
+    language 不传时自动检测：中文输入 -> zh，英文输入 -> en。
+    """
+    lang = language or detect_language(raw_text)
+    cleaned = clean_text(raw_text, lang)
+    input_type = detect_input_type(cleaned, lang)
+    chunks = split_long_text(cleaned, chunk_size, overlap, lang)
     hits = check_sensitive(cleaned)
 
     result = ParseResult(
         input_type=input_type,
-        input_type_label=INPUT_TYPE_LABELS[input_type],
+        input_type_label=(
+            INPUT_TYPE_LABELS_EN[input_type] if lang == "en"
+            else INPUT_TYPE_LABELS[input_type]
+        ),
         needs_expansion=needs_expansion(input_type),
         cleaned_text=cleaned,
         chunks=chunks,
@@ -366,6 +461,7 @@ def parse_input(
         original_length=len(raw_text or ""),
         cleaned_length=len(cleaned),
         chunk_count=len(chunks),
+        language=lang,
     )
 
     if template:

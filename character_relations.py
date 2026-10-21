@@ -594,7 +594,14 @@ def enrich_episode(ep: es.Episode) -> es.Episode:
     顺序：1) 清洗黑名单身份词角色；若无任何明确角色，先从纯叙述文本挖掘
     候选名并生成角色；2) 隔词/隔动作说话人归属，并把新发现的说话人补入
     角色清单；3) 提取关系线；4) 更新角色 description 附加关系摘要。
+
+    英文输入（ep.language == "en"）时，中文专属的叙述挖掘/说话人归属/
+    关系线正则均不适用，角色与台词已在拆集阶段（_extract_characters_en /
+    _extract_lines_en）完成，此处直接返回，避免用中文规则污染英文结果。
     """
+    if getattr(ep, "language", "zh") == "en":
+        return ep
+
     text = ep.source_text or ""
 
     # 清洗 T07 基础版可能误提的「声音」等身份词角色
