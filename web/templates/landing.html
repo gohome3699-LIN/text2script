@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="純文轉劇本分鏡：上傳 .docx / .txt / .md 或直接貼上文字，一鍵生成純文字檔分鏡稿。手機與電腦皆可使用，暫定訂閱方案現正籌備中。">
+  <title>純文轉劇本分鏡 · 立即免費使用</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}">
+</head>
+<body class="landing">
+  <main class="page landing-page">
+    <!-- 主視覺 -->
+    <header class="hero landing-hero">
+      <h1>純文轉劇本分鏡</h1>
+      <p class="sub">把你的故事，一鍵變成可直接使用的純文字檔分鏡稿</p>
+      <a class="btn primary cta" href="/">立即免費使用</a>
+    </header>
+
+    <!-- 特色說明 -->
+    <section class="features" aria-label="特色">
+      <article class="card feature">
+        <h2 class="feature-title">上傳或貼上</h2>
+        <p class="feature-desc">支援 .docx / .txt / .md，或直接貼上文字，最大 10MB。</p>
+      </article>
+      <article class="card feature">
+        <h2 class="feature-title">一鍵轉換</h2>
+        <p class="feature-desc">自動拆集、分鏡，超過 800 字按分鏡節點分段，輸出純文字檔。</p>
+      </article>
+      <article class="card feature">
+        <h2 class="feature-title">免費下載</h2>
+        <p class="feature-desc">轉換結果可複製或下載 .txt，手機電腦皆可使用。</p>
+      </article>
+    </section>
+
+    <!-- 暫定三檔定價 -->
+    <section class="card pricing" aria-label="方案與價格">
+      <h2>方案與價格</h2>
+      <p class="pricing-note">以下為暫定價格，正式收費將於開發完成十冊後，依市場調查調整。</p>
+      <div class="pricing-grid">
+        <article class="plan">
+          <h3 class="plan-name">Free</h3>
+          <p class="plan-price">0 美元</p>
+          <p class="plan-note">每月 10 次轉換</p>
+        </article>
+        <article class="plan popular">
+          <h3 class="plan-name">Pro</h3>
+          <p class="plan-price">9 美元 / 月</p>
+          <p class="plan-note">年付 90 美元<br>每月 100 次轉換</p>
+        </article>
+        <article class="plan">
+          <h3 class="plan-name">Studio</h3>
+          <p class="plan-price">29 美元 / 月</p>
+          <p class="plan-note">年付 290 美元<br>每月 500 次轉換</p>
+        </article>
+      </div>
+      <p class="pricing-disclaimer">* 收費訂價待開發完成十冊後依市場調查調整。</p>
+    </section>
+
+    <!-- Email 訂閱收集 -->
+    <section class="card subscribe" aria-label="訂閱通知">
+      <h2>搶先體驗</h2>
+      <p class="subscribe-desc">留下 Email，第一時間收到上線與方案通知。</p>
+      <form id="subscribe-form" novalidate>
+        <div class="subscribe-row">
+          <input
+            type="email"
+            id="subscribe-email"
+            name="email"
+            placeholder="name@example.com"
+            autocomplete="email"
+            inputmode="email"
+            required>
+          <button type="submit" class="btn primary subscribe-btn">訂閱通知</button>
+        </div>
+      </form>
+      <p class="subscribe-msg" id="subscribe-msg" role="status" hidden></p>
+    </section>
+
+    <footer class="foot">純文轉劇本分鏡 · 網頁版 · 預約中</footer>
+  </main>
+  <script src="{{ url_for('static', filename='tracking.js') }}"></script>
+  <script src="{{ url_for('static', filename='landing.js') }}"></script>
+</body>
+</html>

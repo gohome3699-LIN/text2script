@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="純文轉劇本分鏡儀表板：查看使用概況、本月剩餘額度與歷史轉換記錄。">
+  <title>使用概況 · 純文轉劇本分鏡</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='member.css') }}">
+</head>
+<body class="member">
+  <main class="page">
+    <nav class="topnav">
+      <a class="topnav-brand" href="/">純文轉劇本分鏡</a>
+      <div class="topnav-links">
+        <a href="/usage">使用頁</a>
+        <a href="/dashboard" class="active">儀表板</a>
+        <a href="/">工具</a>
+        <button type="button" class="js-logout">登出</button>
+      </div>
+    </nav>
+
+    <section class="card">
+      <h2 class="section-title">使用概況</h2>
+      <div class="quota-grid">
+        <div class="quota-row"><span class="k">帳號（Email）</span><span class="v" id="me-email">載入中…</span></div>
+        <div class="quota-row"><span class="k">目前方案</span><span class="v" id="me-plan">…</span></div>
+        <div class="quota-row"><span class="k">本月已用</span><span class="v" id="me-used">…</span></div>
+        <div class="quota-row"><span class="k">本月剩餘</span><span class="v" id="me-remaining">…</span></div>
+      </div>
+      <div class="quota-bar" aria-hidden="true"><div class="quota-bar-fill" id="quota-fill"></div></div>
+      <p class="quota-hint" id="quota-month"></p>
+      <div class="quota-actions">
+        <a class="btn ghost" href="/usage">開始文轉劇</a>
+        <a class="btn ghost" href="/landing">查看方案</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">歷史記錄</h2>
+      <p class="history-empty" id="history-empty" hidden></p>
+      <ul class="history-list" id="history-list"></ul>
+    </section>
+
+    <footer class="foot">純文轉劇本分鏡 · 網頁版</footer>
+  </main>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="登入純文轉劇本分鏡：使用 Email＋密碼登入或註冊，登入後開始文轉劇轉換。">
+  <title>登入 · 純文轉劇本分鏡</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='member.css') }}">
+</head>
+<body class="member">
+  <main class="page">
+    <section class="card auth-card">
+      <header class="auth-head">
+        <h1>純文轉劇本分鏡</h1>
+        <p id="auth-sub">登入以繼續使用</p>
+      </header>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" id="tab-login" data-mode="login" role="tab" aria-selected="true">登入</button>
+        <button type="button" class="tab" id="tab-signup" data-mode="signup" role="tab" aria-selected="false">註冊</button>
+      </div>
+
+      <form id="auth-form" novalidate>
+        <div class="auth-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="name@example.com" autocomplete="email" inputmode="email" required>
+        </div>
+        <div class="auth-field">
+          <label for="password">密碼</label>
+          <input type="password" id="password" name="password" placeholder="至少 6 個字元" autocomplete="current-password" required>
+        </div>
+        <div class="auth-field" id="confirm-field" hidden>
+          <label for="password2">再次輸入密碼</label>
+          <input type="password" id="password2" name="password2" placeholder="與上方密碼相同" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn primary" id="auth-btn">登 入</button>
+      </form>
+      <p class="auth-msg" id="auth-msg" role="status" hidden></p>
+      <p class="auth-switch-note" id="auth-switch-note">
+        還沒有帳號？<button type="button" class="linklike" id="switch-mode">立即註冊</button>
+      </p>
+      <a class="auth-back" href="/">← 返回工具首頁</a>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='tracking.js') }}"></script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='login.js') }}"></script>
+</body>
+</html>

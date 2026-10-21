@@ -1,0 +1,119 @@
+/* ============================================================
+   落地頁專用樣式（body.landing）
+   ------------------------------------------------------------
+   基礎沿用 style.css（變數、.page、.card、.btn、斷點階梯）。
+   body 不掛 .tool → .page 於桌面自動套用寬版：
+   ≥768→760px / ≥1024→920px / ≥1280→1080px / ≥1536→1200px。
+   本檔僅補充落地頁元件樣式；移動優先（375px 基準，360–430px 實測）。
+   ============================================================ */
+
+body.landing { min-height: 100vh; }
+
+/* ---------- Hero（手機版：單欄置中） ---------- */
+.landing-hero { padding: 28px 0 6px; }
+.landing-hero h1 { font-size: 30px; line-height: 1.3; }
+.landing-hero .sub { font-size: 15px; margin: 12px auto 20px; max-width: 480px; }
+
+/* CTA：手機滿寬（375px 一手可點），寬版收斂內距 */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 13px 24px;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+/* ---------- 特色（手機單欄 → ≥768 三欄） ---------- */
+.features {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0;
+}
+.feature { margin-bottom: 0; }
+.feature-title { margin: 0 0 6px; font-size: 18px; }
+.feature-desc { margin: 0; font-size: 14px; color: var(--muted); }
+
+/* ---------- 三檔定價（手機單欄，≥768 三欄） ---------- */
+.pricing { margin: 22px 0; text-align: center; }
+.pricing h2 { margin: 0 0 6px; font-size: 22px; }
+.pricing-note {
+  margin: 0 auto 16px;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 520px;
+}
+.pricing-grid {
+  display: grid;
+  gap: 14px;
+  text-align: left;
+}
+.plan {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 16px;
+  background: #fcfdff;
+}
+.plan.popular {
+  border-color: var(--primary);
+  box-shadow: 0 6px 20px rgba(47, 107, 255, 0.14);
+}
+.plan-name { margin: 0 0 8px; font-size: 16px; color: var(--muted); }
+.plan.popular .plan-name { color: var(--primary); font-weight: 700; }
+.plan-price { margin: 0 0 8px; font-size: 24px; font-weight: 700; }
+.plan-note { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.pricing-disclaimer { margin: 14px 0 0; font-size: 12px; color: var(--muted); }
+
+/* ---------- Email 訂閱（手機單欄 → ≥640 行內） ---------- */
+.subscribe { text-align: center; }
+.subscribe h2 { margin: 0 0 6px; font-size: 22px; }
+.subscribe-desc {
+  margin: 0 auto 16px;
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 460px;
+}
+.subscribe-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 460px;
+  margin: 0 auto;
+}
+.subscribe-row input {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fcfdff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.subscribe-row input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.12);
+}
+.subscribe-btn { width: 100%; margin-top: 0; padding: 12px 24px; font-size: 15px; }
+.subscribe-msg { margin: 12px 0 0; font-size: 14px; }
+.subscribe-msg.ok { color: #15803d; }
+.subscribe-msg.err { color: var(--danger); }
+
+/* ---------- 斷點：sm（≥640px，表單行內） ---------- */
+@media (min-width: 640px) {
+  .subscribe-row { flex-direction: row; }
+  .subscribe-btn { width: auto; flex: 0 0 auto; }
+}
+
+/* ---------- 斷點：md（≥768px，三欄） ---------- */
+@media (min-width: 768px) {
+  .landing-hero h1 { font-size: 38px; }
+  .features { grid-template-columns: repeat(3, 1fr); }
+  .pricing-grid { grid-template-columns: repeat(3, 1fr); }
+}

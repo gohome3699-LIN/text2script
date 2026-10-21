@@ -1,13 +1,20 @@
 # -*- coding: utf-8 -*-
-"""网页版自测：使用 Flask test client 覆盖核心接口与规则。"""
+"""网页版自测：使用 Flask test client 覆盖核心接口与规则。
+
+M2 整合后 /convert 需登录：每个测试在 setUp 注册独立用户（Free 10 次/月），
+转换请求携带 Authorization Bearer header。文件数据写入临时目录。
+"""
 import io
 import os
 import sys
 import tempfile
 import unittest
+import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import app as webapp
+import auth
+import usage
 
 
 def make_docx_bytes():
@@ -26,6 +33,26 @@ class WebAppTest(unittest.TestCase):
     def setUp(self):
         webapp.app.config["TESTING"] = True
         self.client = webapp.app.test_client()
+        # 数据文件指向临时目录，避免污染真实 data/
+        self.tmpdir = tempfile.TemporaryDirectory()
+        auth.DATA_DIR = self.tmpdir.name
+        auth.USERS_FILE = os.path.join(self.tmpdir.name, "users.json")
+        auth.REFRESH_FILE = os.path.join(self.tmpdir.name, "refresh_tokens.json")
+        usage.DATA_DIR = self.tmpdir.name
+        usage.USAGE_FILE = os.path.join(self.tmpdir.name, "usage.json")
+        # 每个测试独立用户；成功转换会消耗 1 次额度
+        email = f"u{uuid.uuid4().hex[:10]}@example.com"
+        r = self.client.post(
+            "/api/auth/signup",
+            json={"email": email, "password": "secret123"},
+        )
+        self.assertEqual(r.status_code, 201, r.get_data(as_text=True))
+        self.headers = {
+            "Authorization": "Bearer " + r.get_json()["access_token"]
+        }
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
 
     def test_index_ok(self):
         r = self.client.get("/")
@@ -37,9 +64,14 @@ class WebAppTest(unittest.TestCase):
         self.assertIn('data-lang="zh-TW"', html)
         self.assertIn('data-lang="en"', html)
 
+    def test_convert_requires_login(self):
+        r = self.client.post("/convert", data={"text": "外卖小哥获得读心术。"})
+        self.assertEqual(r.status_code, 401)
+        self.assertEqual(r.get_json()["error_code"], "auth_required")
+
     def test_convert_text_short_compact(self):
         text = "外卖小哥获得读心术，送餐途中一次次救下陌生人。"
-        r = self.client.post("/convert", data={"text": text})
+        r = self.client.post("/convert", data={"text": text}, headers=self.headers)
         self.assertEqual(r.status_code, 200)
         data = r.get_json()
         self.assertTrue(data["ok"])
@@ -59,6 +91,10 @@ class WebAppTest(unittest.TestCase):
         # 中文输入 → 中文输出
         self.assertEqual(data["language"], "zh")
         self.assertIn("剧本分镜稿", content)
+        # M2 整合：成功转换返回额度信息且已消耗 1 次
+        self.assertIn("usage", data)
+        self.assertEqual(data["usage"]["used"], 1)
+        self.assertEqual(data["usage"]["remaining"], 9)
 
     def test_convert_english_text_output_english(self):
         text = (
@@ -68,7 +104,7 @@ class WebAppTest(unittest.TestCase):
             "his promise to protect the weak. He follows the gangsters to a "
             "warehouse and confronts them alone."
         )
-        r = self.client.post("/convert", data={"text": text})
+        r = self.client.post("/convert", data={"text": text}, headers=self.headers)
         self.assertEqual(r.status_code, 200)
         data = r.get_json()
         self.assertTrue(data["ok"])
@@ -83,7 +119,7 @@ class WebAppTest(unittest.TestCase):
 
     def test_convert_text_long_break_by_shot(self):
         text = "深夜大雨中，落魄退伍兵陈默在便利店撞见被追杀的少女林晚。" * 40  # >800
-        r = self.client.post("/convert", data={"text": text})
+        r = self.client.post("/convert", data={"text": text}, headers=self.headers)
         self.assertEqual(r.status_code, 200)
         data = r.get_json()
         self.assertTrue(data["ok"])
@@ -98,6 +134,7 @@ class WebAppTest(unittest.TestCase):
             "/convert",
             data={"file": (io.BytesIO(raw.encode("utf-8")), "story.txt")},
             content_type="multipart/form-data",
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.get_json()["ok"])
@@ -108,6 +145,7 @@ class WebAppTest(unittest.TestCase):
             "/convert",
             data={"file": (io.BytesIO(raw.encode("utf-8")), "chapter.md")},
             content_type="multipart/form-data",
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.get_json()["ok"])
@@ -117,20 +155,23 @@ class WebAppTest(unittest.TestCase):
             "/convert",
             data={"file": (io.BytesIO(make_docx_bytes()), "story.docx")},
             content_type="multipart/form-data",
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.get_json()["ok"])
         self.assertIn("陈默", r.get_json()["content"])
 
     def test_convert_empty_input(self):
-        r = self.client.post("/convert", data={"text": "   "})
+        r = self.client.post(
+            "/convert", data={"text": "   "}, headers=self.headers
+        )
         self.assertEqual(r.status_code, 400)
         data = r.get_json()
         self.assertFalse(data["ok"])
         self.assertEqual(data["error_code"], "empty_text")
 
     def test_convert_no_input(self):
-        r = self.client.post("/convert", data={})
+        r = self.client.post("/convert", data={}, headers=self.headers)
         self.assertEqual(r.status_code, 400)
         self.assertEqual(r.get_json()["error_code"], "no_input")
 
@@ -139,6 +180,7 @@ class WebAppTest(unittest.TestCase):
             "/convert",
             data={"file": (io.BytesIO(b"x"), "evil.exe")},
             content_type="multipart/form-data",
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 400)
         data = r.get_json()
@@ -153,6 +195,7 @@ class WebAppTest(unittest.TestCase):
             "/convert",
             data={"file": (io.BytesIO(raw.encode("gb18030")), "gbk.txt")},
             content_type="multipart/form-data",
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 200)
         data = r.get_json()
@@ -165,6 +208,7 @@ class WebAppTest(unittest.TestCase):
             "/convert",
             data={"file": (io.BytesIO(big), "big.txt")},
             content_type="multipart/form-data",
+            headers=self.headers,
         )
         self.assertEqual(r.status_code, 413)
         self.assertEqual(r.get_json()["error_code"], "file_too_large")

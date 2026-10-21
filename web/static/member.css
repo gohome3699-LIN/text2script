@@ -1,0 +1,197 @@
+/* ============================================================
+   會員端樣式（body.member：login / dashboard / usage）
+   ------------------------------------------------------------
+   基礎沿用 style.css（變數、.page、.card、.btn、斷點階梯）。
+   body 不掛 .tool → .page 於桌面自動套用寬版：
+   ≥768→760px / ≥1024→920px / ≥1280→1080px / ≥1536→1200px。
+   移動優先（375px 基準，360–430px 實測）。
+   ============================================================ */
+
+body.member { min-height: 100vh; }
+
+/* ---------- 頂部導覽 ---------- */
+.topnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-bottom: 18px;
+}
+.topnav-brand {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  margin-right: auto;
+}
+.topnav-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.topnav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 2px;
+}
+.topnav-links a.active { color: var(--primary); }
+.topnav-links button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- 認證頁（login） ---------- */
+.auth-card { max-width: 420px; margin: 0 auto; }
+.auth-head { text-align: center; margin-bottom: 16px; }
+.auth-head h1 { margin: 0 0 4px; font-size: 24px; }
+.auth-head p { margin: 0; color: var(--muted); font-size: 14px; }
+.auth-field { margin-bottom: 14px; }
+.auth-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.auth-field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fcfdff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.auth-field input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.12);
+}
+.auth-msg { margin: 12px 0 0; font-size: 14px; }
+.auth-msg.ok { color: #15803d; }
+.auth-msg.err { color: var(--danger); }
+.linklike {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.auth-switch-note {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 14px;
+}
+.auth-back {
+  display: block;
+  margin-top: 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+/* ---------- 儀表板（dashboard） ---------- */
+.section-title { font-size: 18px; margin: 0 0 12px; }
+.quota-grid {
+  display: grid;
+  gap: 10px;
+}
+.quota-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+}
+.quota-row .k { color: var(--muted); }
+.quota-row .v { font-weight: 700; word-break: break-all; }
+.quota-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #e8ecf5;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.quota-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  transition: width 0.3s;
+  width: 0;
+}
+.quota-bar-fill.low { background: #f59e0b; }
+.quota-bar-fill.empty { background: var(--danger); }
+.quota-hint { margin: 8px 2px 0; font-size: 12px; color: var(--muted); }
+.quota-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+.quota-actions .btn { width: auto; padding: 10px 18px; text-decoration: none; display: inline-block; }
+
+/* ---------- 歷史記錄 ---------- */
+.history-empty { color: var(--muted); font-size: 14px; margin: 0; padding: 8px 0; }
+.history-list { list-style: none; margin: 0; padding: 0; }
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.history-item:last-child { border-bottom: 0; }
+.history-main { min-width: 0; }
+.history-time { font-size: 12px; color: var(--muted); }
+.history-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+/* ---------- 使用頁（usage） ---------- */
+.usage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.usage-head h1 { margin: 0; font-size: 22px; }
+.usage-sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.quota-chip {
+  background: #eef4ff;
+  color: var(--primary-dark);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.quota-chip.low { background: #fff3e6; color: #b45309; }
+.quota-chip.empty { background: #fdecef; color: var(--danger); }
+
+/* ---------- 斷點：sm（≥640px，儀表板兩欄） ---------- */
+@media (min-width: 640px) {
+  .quota-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- 斷點：md（≥768px 平板/桌面） ---------- */
+@media (min-width: 768px) {
+  .topnav { margin-bottom: 26px; }
+  .topnav-links a, .topnav-links button { font-size: 15px; }
+  .section-title { font-size: 20px; }
+  .usage-head h1 { font-size: 26px; }
+}
+
+/* ---------- 斷點：lg（≥1024px 桌面，卡內距加大） ---------- */
+@media (min-width: 1024px) {
+  .card { padding: 24px; }
+}

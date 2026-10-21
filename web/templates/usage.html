@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="文轉劇操作頁：上傳 .docx / .txt / .md 或直接貼上文字，一鍵生成純文字檔分鏡稿，可複製或下載 .txt。">
+  <title>文轉劇 · 純文轉劇本分鏡</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='member.css') }}">
+</head>
+<body class="member">
+  <main class="page">
+    <nav class="topnav">
+      <a class="topnav-brand" href="/">純文轉劇本分鏡</a>
+      <div class="topnav-links">
+        <a href="/usage" class="active">使用頁</a>
+        <a href="/dashboard">儀表板</a>
+        <a href="/">工具</a>
+        <button type="button" class="js-logout">登出</button>
+      </div>
+    </nav>
+
+    <section class="card">
+      <div class="usage-head">
+        <h1>文轉劇</h1>
+        <span class="quota-chip" id="quota-chip">剩餘載入中…</span>
+      </div>
+      <p class="usage-sub">上傳 .docx / .txt / .md，或直接貼上 / 打字，一鍵生成純文字檔分鏡稿。每次轉換消耗 1 次額度。</p>
+    </section>
+
+    <section class="card input-card">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="file" role="tab" aria-selected="true">上傳檔案</button>
+        <button type="button" class="tab" data-tab="text" role="tab" aria-selected="false">貼上 / 打字</button>
+      </div>
+
+      <div class="tab-panel" data-panel="file">
+        <label class="dropzone" id="dropzone" for="file-input">
+          <input type="file" id="file-input" accept=".txt,.md,.docx" hidden>
+          <svg class="dz-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M14 2v6h6M12 11v6m-3-3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="dz-main">點擊選擇檔案，或拖曳到此處</p>
+          <p class="dz-sub">支援 .docx / .txt / .md，最大 10MB</p>
+          <p class="dz-file" id="file-name"></p>
+        </label>
+        <p class="hint">提示：上傳後點「轉換」即可，檔案內容不會被儲存到伺服器。</p>
+      </div>
+
+      <div class="tab-panel" data-panel="text" hidden>
+        <textarea
+          id="story-text"
+          rows="8"
+          maxlength="50000"
+          placeholder="在這裡貼上或輸入你的故事：一句話創意、故事梗概、大綱、小說片段都可以。&#10;&#10;例如：外賣小哥獲得讀心術，在送餐途中一次次救下陌生人，卻發現自己也被捲入更大的陰謀……"
+        ></textarea>
+        <div class="counter"><span id="char-count">0</span> / 50000 字</div>
+      </div>
+
+      <button type="button" class="btn primary" id="convert-btn">
+        <span class="btn-label">轉 換</span>
+        <span class="btn-loading" hidden>轉換中…</span>
+      </button>
+      <p class="error" id="error-box" role="alert" hidden></p>
+    </section>
+
+    <section class="card result-card" id="result-card" hidden>
+      <div class="result-head">
+        <h2>分鏡稿</h2>
+        <div class="result-actions">
+          <button type="button" class="btn ghost" id="copy-btn">複製</button>
+          <button type="button" class="btn ghost" id="download-btn">下載 .txt</button>
+        </div>
+      </div>
+      <div class="meta" id="meta"></div>
+      <pre class="result-body" id="result-body"></pre>
+      <p class="ai-notice">本內容由 AI 生成，僅供參考</p>
+    </section>
+
+    <footer class="foot">純文轉劇本分鏡 · 網頁版</footer>
+  </main>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='usage.js') }}"></script>
+</body>
+</html>
